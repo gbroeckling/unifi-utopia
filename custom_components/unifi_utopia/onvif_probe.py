@@ -41,7 +41,7 @@ WS_DISCOVERY_PROBE = """<?xml version="1.0" encoding="utf-8"?>
                xmlns:dn="http://www.onvif.org/ver10/network/wsdl">
   <soap:Header>
     <wsa:Action>http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe</wsa:Action>
-    <wsa:MessageID>urn:uuid:unifiblocker-probe-{msg_id}</wsa:MessageID>
+    <wsa:MessageID>urn:uuid:unifi_utopia-probe-{msg_id}</wsa:MessageID>
     <wsa:To>urn:schemas-xmlsoap-org:ws:2005:04:discovery</wsa:To>
   </soap:Header>
   <soap:Body>
@@ -128,7 +128,7 @@ class OnvifProbe:
         self._store = None
         if hass is not None:
             from homeassistant.helpers.storage import Store
-            self._store = Store(hass, 1, "unifiblocker_onvif")
+            self._store = Store(hass, 1, "unifi_utopia_onvif")
 
     async def async_load(self) -> None:
         if self._store:

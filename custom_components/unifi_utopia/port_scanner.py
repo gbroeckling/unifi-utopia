@@ -387,7 +387,7 @@ _PORT_VULN_RECS.update({
 })
 
 
-SCAN_CACHE_FILE = "unifiblocker_scan_cache.json"
+SCAN_CACHE_FILE = "unifi_utopia_scan_cache.json"
 
 
 class PortScanner:

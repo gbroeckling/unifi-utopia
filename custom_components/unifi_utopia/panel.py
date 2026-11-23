@@ -1,4 +1,4 @@
-"""Register the UniFi Blocker sidebar panel."""
+"""Register the UniFi Utopia sidebar panel."""
 from __future__ import annotations
 
 import logging
@@ -12,12 +12,12 @@ from homeassistant.core import HomeAssistant
 _LOGGER = logging.getLogger(__name__)
 
 PANEL_ICON = "mdi:shield-lock"
-PANEL_TITLE = "UniFi Blocker"
+PANEL_TITLE = "UniFi Utopia"
 
-_WWW_DIR = os.path.join(os.path.dirname(__file__), "www", "unifiblocker")
-_URL_BASE = "/unifiblocker_panel"
-_PANEL_PATH = "unifiblocker"
-_STATIC_REGISTERED = "unifiblocker_static_registered"
+_WWW_DIR = os.path.join(os.path.dirname(__file__), "www", "unifi_utopia")
+_URL_BASE = "/unifi_utopia_panel"
+_PANEL_PATH = "unifi-utopia"
+_STATIC_REGISTERED = "unifi_utopia_static_registered"
 
 # Cache-bust: append timestamp so browsers always load the latest JS.
 _CACHE_BUST = str(int(time.time()))
@@ -37,7 +37,7 @@ async def async_register_panel(hass: HomeAssistant) -> None:
 
     await panel_custom.async_register_panel(
         hass,
-        webcomponent_name="unifiblocker-panel",
+        webcomponent_name="unifi-utopia-panel",
         frontend_url_path=_PANEL_PATH,
         sidebar_title=PANEL_TITLE,
         sidebar_icon=PANEL_ICON,
@@ -46,7 +46,7 @@ async def async_register_panel(hass: HomeAssistant) -> None:
         require_admin=True,
         config={},
     )
-    _LOGGER.info("UniFi Blocker sidebar panel registered (cache bust: %s)", _CACHE_BUST)
+    _LOGGER.info("UniFi Utopia sidebar panel registered (cache bust: %s)", _CACHE_BUST)
 
 
 def async_unregister_panel(hass: HomeAssistant) -> None:

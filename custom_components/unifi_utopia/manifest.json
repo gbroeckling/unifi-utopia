@@ -1,0 +1,11 @@
+{
+  "domain": "unifi_utopia",
+  "name": "UniFi Utopia",
+  "codeowners": ["@gbroeckling"],
+  "config_flow": true,
+  "dependencies": ["http", "zeroconf"],
+  "documentation": "https://github.com/gbroeckling/unifi-utopia",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/gbroeckling/unifi-utopia/issues",
+  "version": "0.4.0"
+}

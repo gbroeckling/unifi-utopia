@@ -1,6 +1,6 @@
 # Network Guide — Flat /22 Camera Isolation
 
-This guide explains how to set up a flat /22 network on a UniFi UCG Max to isolate IP cameras and IoT devices from the internet without using VLANs. This is the network architecture that UniFi Blocker is designed to manage.
+This guide explains how to set up a flat /22 network on a UniFi UCG Max to isolate IP cameras and IoT devices from the internet without using VLANs. This is the network architecture that UniFi Utopia is designed to manage.
 
 ---
 
@@ -14,7 +14,7 @@ This guide explains how to set up a flat /22 network on a UniFi UCG Max to isola
   - [2. Configure the DHCP Pool](#2-configure-the-dhcp-pool)
   - [3. Create DHCP Reservations](#3-create-dhcp-reservations)
   - [4. Create the Firewall Rule](#4-create-the-firewall-rule)
-- [How UniFi Blocker Automates This](#how-unifi-blocker-automates-this)
+- [How UniFi Utopia Automates This](#how-unifi-blocker-automates-this)
 - [Recommended Camera Workflow](#recommended-camera-workflow)
 - [FAQ and Troubleshooting](#faq-and-troubleshooting)
 
@@ -130,7 +130,7 @@ This is still one flat network. Every device can talk to every other device on t
 
 Want to move a camera from "internet access" to "local-only"?
 
-1. Find its MAC address (UniFi Blocker shows this)
+1. Find its MAC address (UniFi Utopia shows this)
 2. Create or change its DHCP reservation from 192.168.1.x or 192.168.3.x to 192.168.2.x
 3. Reconnect the device (or wait for DHCP lease renewal)
 
@@ -187,14 +187,14 @@ Repeat for all trusted devices: your computers, phones, Home Assistant server, N
 Same process, but assign IPs in the 192.168.2.x range:
 
 1. Click on a device (e.g., a Hikvision camera)
-2. Set fixed IP to `192.168.2.30` (UniFi Blocker uses .30-.50 for cameras)
+2. Set fixed IP to `192.168.2.30` (UniFi Utopia uses .30-.50 for cameras)
 3. Click **Save**
 
-The device will pick up its new IP on the next DHCP renewal. You can force this by reconnecting the device or using UniFi Blocker's reconnect service.
+The device will pick up its new IP on the next DHCP renewal. You can force this by reconnecting the device or using UniFi Utopia's reconnect service.
 
 #### Suggested IP Layout for 192.168.2.x
 
-UniFi Blocker automatically assigns IPs within these ranges when you move a device to local-only:
+UniFi Utopia automatically assigns IPs within these ranges when you move a device to local-only:
 
 | Range | Category |
 |-------|----------|
@@ -257,9 +257,9 @@ This is optional. Most cameras work fine without DNS when they already know your
 
 ---
 
-## How UniFi Blocker Automates This
+## How UniFi Utopia Automates This
 
-With the /22 network and firewall rule in place, UniFi Blocker handles the day-to-day workflow:
+With the /22 network and firewall rule in place, UniFi Utopia handles the day-to-day workflow:
 
 ### Discovery
 - Polls the UniFi controller for all connected clients
@@ -297,7 +297,7 @@ When you discover a new camera on your network — or want to audit existing cam
 
 ### 1. Discover
 
-Open UniFi Blocker's sidebar panel and check the device list. New devices appear in the review queue. Cameras identified by ONVIF or vendor OUI are highlighted automatically.
+Open UniFi Utopia's sidebar panel and check the device list. New devices appear in the review queue. Cameras identified by ONVIF or vendor OUI are highlighted automatically.
 
 ### 2. Scan
 
@@ -321,7 +321,7 @@ Review the security recommendations for the device. If it is a Hikvision, Dahua,
 
 ### 5. Isolate
 
-From the sidebar panel (in Action Mode), assign the camera to the local-only subnet. UniFi Blocker will:
+From the sidebar panel (in Action Mode), assign the camera to the local-only subnet. UniFi Utopia will:
 
 1. Pick an IP in the 192.168.2.30-.50 range (cameras)
 2. Create a DHCP reservation via the UniFi API
@@ -353,11 +353,11 @@ Not over the internet. Download firmware updates manually from the vendor's webs
 
 **Q: Do I need a UniFi switch or APs for this to work?**
 
-You need a UniFi gateway (UCG Max, UDM, UDM Pro, etc.) running UniFi OS. The switches and APs can be any brand. The DHCP and firewall are handled by the gateway. UniFi Blocker communicates with the UniFi OS API on the gateway.
+You need a UniFi gateway (UCG Max, UDM, UDM Pro, etc.) running UniFi OS. The switches and APs can be any brand. The DHCP and firewall are handled by the gateway. UniFi Utopia communicates with the UniFi OS API on the gateway.
 
 **Q: Can I use different IP ranges than 192.168.1-3.x?**
 
-The /22 subnet starting at 192.168.0.0 gives you 192.168.0.x through 192.168.3.x. The choice of which /24 range is "trusted" vs "local-only" vs "DHCP pool" is enforced only by the firewall rule — you can rearrange them if you prefer. The defaults in UniFi Blocker (192.168.1.x trusted, 192.168.2.x local-only, 192.168.3.x DHCP) match common home network conventions.
+The /22 subnet starting at 192.168.0.0 gives you 192.168.0.x through 192.168.3.x. The choice of which /24 range is "trusted" vs "local-only" vs "DHCP pool" is enforced only by the firewall rule — you can rearrange them if you prefer. The defaults in UniFi Utopia (192.168.1.x trusted, 192.168.2.x local-only, 192.168.3.x DHCP) match common home network conventions.
 
 **Q: I already have devices on 192.168.1.x with a /24 subnet. Will changing to /22 break anything?**
 
@@ -379,7 +379,7 @@ This guide covers IPv4 only. If your cameras have IPv6 connectivity, they may be
 
 **Camera is not accessible after moving to 192.168.2.x**
 
-1. The device may not have renewed its DHCP lease yet. Use UniFi Blocker's reconnect service or power-cycle the camera.
+1. The device may not have renewed its DHCP lease yet. Use UniFi Utopia's reconnect service or power-cycle the camera.
 2. Check the UniFi client list to confirm the camera's current IP is in the 192.168.2.x range.
 3. Verify that your NVR / Frigate is configured to access the camera at the new IP address. If you used the old 192.168.1.x or 192.168.3.x address, you need to update the RTSP URL.
 
@@ -398,9 +398,9 @@ This guide covers IPv4 only. If your cameras have IPv6 connectivity, they may be
 **New devices are not appearing in the review queue**
 
 1. Check the polling interval in the integration settings. The default is 60 seconds — new devices appear within one polling cycle.
-2. Verify the integration is running: check **Settings > Devices & Services** and look for UniFi Blocker. If it shows an error, check your credentials and network connectivity to the UCG Max.
+2. Verify the integration is running: check **Settings > Devices & Services** and look for UniFi Utopia. If it shows an error, check your credentials and network connectivity to the UCG Max.
 
-**UniFi Blocker cannot connect to the controller**
+**UniFi Utopia cannot connect to the controller**
 
 1. Verify the UCG Max IP, username, and password in the integration settings.
 2. The account must be a local admin account on the controller (not a Ubiquiti cloud account, unless the controller is set up for cloud access).
@@ -411,6 +411,6 @@ This guide covers IPv4 only. If your cameras have IPv6 connectivity, they may be
 
 ## Further Reading
 
-- [UniFi Blocker README](README.md) — full feature list and integration setup
+- [UniFi Utopia README](README.md) — full feature list and integration setup
 - [CONTRIBUTING.md](CONTRIBUTING.md) — how to contribute to the project
 - [CHANGELOG.md](CHANGELOG.md) — version history and release notes

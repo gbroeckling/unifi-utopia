@@ -2,7 +2,7 @@
 
 ## Our Pledge
 
-We want UniFi Blocker to be a welcoming project for everyone — regardless of experience level, background, or how they write their code.
+We want UniFi Utopia to be a welcoming project for everyone — regardless of experience level, background, or how they write their code.
 
 ## Expected Behavior
 
@@ -24,4 +24,4 @@ If someone violates this code of conduct, the maintainer may remove comments, cl
 
 ## Scope
 
-This applies to all project spaces — GitHub issues, pull requests, discussions, and any other communication channel associated with UniFi Blocker.
+This applies to all project spaces — GitHub issues, pull requests, discussions, and any other communication channel associated with UniFi Utopia.

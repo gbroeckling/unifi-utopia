@@ -31,14 +31,14 @@
       "unknown": "An unexpected error occurred."
     },
     "abort": {
-      "already_configured": "UniFi Blocker is already configured.",
+      "already_configured": "UniFi Utopia is already configured.",
       "reconfigure_successful": "Connection updated."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "UniFi Blocker Settings",
+        "title": "UniFi Utopia Settings",
         "data": {
           "scan_interval": "Scan interval (seconds)",
           "verify_ssl": "Verify SSL certificate",

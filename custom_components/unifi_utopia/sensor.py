@@ -1,4 +1,4 @@
-"""Sensor platform for UniFi Blocker."""
+"""Sensor platform for UniFi Utopia."""
 from __future__ import annotations
 
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
@@ -8,7 +8,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
-from .coordinator import UniFiBlockerCoordinator, UniFiBlockerData
+from .coordinator import UniFiUtopiaCoordinator, UniFiUtopiaData
 
 
 from .vendor_lookup import lookup_vendor_safe
@@ -20,7 +20,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up sensor entities."""
-    coordinator: UniFiBlockerCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
+    coordinator: UniFiUtopiaCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
     async_add_entities(
         [
             TotalClientsSensor(coordinator, entry),
@@ -39,15 +39,15 @@ async def async_setup_entry(
     )
 
 
-class _BaseSensor(CoordinatorEntity[UniFiBlockerCoordinator], SensorEntity):
-    """Base class for UniFi Blocker sensors."""
+class _BaseSensor(CoordinatorEntity[UniFiUtopiaCoordinator], SensorEntity):
+    """Base class for UniFi Utopia sensors."""
 
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_has_entity_name = True
 
     def __init__(
         self,
-        coordinator: UniFiBlockerCoordinator,
+        coordinator: UniFiUtopiaCoordinator,
         entry: ConfigEntry,
         key: str,
         name: str,
@@ -60,14 +60,14 @@ class _BaseSensor(CoordinatorEntity[UniFiBlockerCoordinator], SensorEntity):
         self._key = key
 
     @property
-    def _data(self) -> UniFiBlockerData | None:
+    def _data(self) -> UniFiUtopiaData | None:
         return self.coordinator.data
 
 
 class TotalClientsSensor(_BaseSensor):
     """Number of currently connected clients."""
 
-    def __init__(self, coordinator: UniFiBlockerCoordinator, entry: ConfigEntry) -> None:
+    def __init__(self, coordinator: UniFiUtopiaCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "total_clients", "Connected clients", "mdi:devices")
 
     @property
@@ -82,7 +82,7 @@ class NewDevicesSensor(_BaseSensor):
     # it's well over the recorder's 16 KB cap, so keep it out of history.
     _unrecorded_attributes = frozenset({"devices"})
 
-    def __init__(self, coordinator: UniFiBlockerCoordinator, entry: ConfigEntry) -> None:
+    def __init__(self, coordinator: UniFiUtopiaCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "new_devices", "New devices", "mdi:alert-decagram")
 
     @property
@@ -101,7 +101,7 @@ class NewDevicesSensor(_BaseSensor):
 class BlockedDevicesSensor(_BaseSensor):
     """Number of currently blocked clients on the controller."""
 
-    def __init__(self, coordinator: UniFiBlockerCoordinator, entry: ConfigEntry) -> None:
+    def __init__(self, coordinator: UniFiUtopiaCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "blocked_devices", "Blocked devices", "mdi:block-helper")
 
     @property
@@ -114,7 +114,7 @@ class QuarantinedDevicesSensor(_BaseSensor):
 
     _unrecorded_attributes = frozenset({"devices"})
 
-    def __init__(self, coordinator: UniFiBlockerCoordinator, entry: ConfigEntry) -> None:
+    def __init__(self, coordinator: UniFiUtopiaCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "quarantined_devices", "Quarantined devices", "mdi:shield-alert")
 
     @property
@@ -140,7 +140,7 @@ class QuarantinedDevicesSensor(_BaseSensor):
 class TrustedDevicesSensor(_BaseSensor):
     """Number of devices marked as trusted."""
 
-    def __init__(self, coordinator: UniFiBlockerCoordinator, entry: ConfigEntry) -> None:
+    def __init__(self, coordinator: UniFiUtopiaCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "trusted_devices", "Trusted devices", "mdi:shield-check")
 
     @property
@@ -151,7 +151,7 @@ class TrustedDevicesSensor(_BaseSensor):
 class WirelessClientsSensor(_BaseSensor):
     """Number of wireless (Wi-Fi) clients currently connected."""
 
-    def __init__(self, coordinator: UniFiBlockerCoordinator, entry: ConfigEntry) -> None:
+    def __init__(self, coordinator: UniFiUtopiaCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "wireless_clients", "Wireless clients", "mdi:wifi")
 
     @property
@@ -164,7 +164,7 @@ class WirelessClientsSensor(_BaseSensor):
 class WiredClientsSensor(_BaseSensor):
     """Number of wired clients currently connected."""
 
-    def __init__(self, coordinator: UniFiBlockerCoordinator, entry: ConfigEntry) -> None:
+    def __init__(self, coordinator: UniFiUtopiaCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "wired_clients", "Wired clients", "mdi:ethernet")
 
     @property
@@ -184,7 +184,7 @@ class AllClientDetailsSensor(_BaseSensor):
     _attr_state_class = None  # Not a measurement
     _unrecorded_attributes = frozenset({"clients"})
 
-    def __init__(self, coordinator: UniFiBlockerCoordinator, entry: ConfigEntry) -> None:
+    def __init__(self, coordinator: UniFiUtopiaCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "all_clients", "All clients detail", "mdi:format-list-bulleted")
 
     @property
@@ -203,7 +203,7 @@ class SuspiciousDevicesSensor(_BaseSensor):
 
     _unrecorded_attributes = frozenset({"devices"})
 
-    def __init__(self, coordinator: UniFiBlockerCoordinator, entry: ConfigEntry) -> None:
+    def __init__(self, coordinator: UniFiUtopiaCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "suspicious_devices", "Suspicious devices", "mdi:alert-octagon")
 
     @property
@@ -228,7 +228,7 @@ class ConnectionHealthSensor(_BaseSensor):
 
     _attr_state_class = None
 
-    def __init__(self, coordinator: UniFiBlockerCoordinator, entry: ConfigEntry) -> None:
+    def __init__(self, coordinator: UniFiUtopiaCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "connection_health", "Controller connection", "mdi:server-network")
 
     @property
@@ -264,7 +264,7 @@ class MinerProfitabilitySensor(_BaseSensor):
     _attr_state_class = None  # USD/day, not a measurement in HA's sense
     _attr_native_unit_of_measurement = "USD/day"
 
-    def __init__(self, coordinator: UniFiBlockerCoordinator, entry: ConfigEntry) -> None:
+    def __init__(self, coordinator: UniFiUtopiaCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "miner_profit_day", "Miner profit day", "mdi:pickaxe")
 
     @property
@@ -293,7 +293,7 @@ class MinerProfitabilitySensor(_BaseSensor):
 class ThreatEventsSensor(_BaseSensor):
     """Count of recent IDS/IPS threat events from the controller."""
 
-    def __init__(self, coordinator: UniFiBlockerCoordinator, entry: ConfigEntry) -> None:
+    def __init__(self, coordinator: UniFiUtopiaCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "threat_events", "Threat events", "mdi:shield-bug")
 
     @property

@@ -1,5 +1,5 @@
 /**
- * UniFi Blocker – Sidebar Panel
+ * UniFi Utopia – Sidebar Panel
  *
  * Read-only by default. Action Mode toggle enables write operations.
  * Dynamic category sub-navigation when a category has 5+ devices.
@@ -26,7 +26,7 @@ function _sanitize(v) {
   return v;
 }
 
-class UniFiBlockerPanel extends HTMLElement {
+class UniFiUtopiaPanel extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
@@ -66,15 +66,15 @@ class UniFiBlockerPanel extends HTMLElement {
 
   async _fetchAll() {
     const [ov, cl, cats, ln, recs, mn, sr, rp, lr] = await Promise.all([
-      this._ws("unifiblocker/overview"),
-      this._ws("unifiblocker/clients"),
-      this._ws("unifiblocker/categories"),
-      this._ws("unifiblocker/localnet_status"),
-      this._ws("unifiblocker/recommendations"),
-      this._ws("unifiblocker/miners"),
-      this._ws("unifiblocker/scan_results"),
-      this._ws("unifiblocker/report_status"),
-      this._ws("unifiblocker/learned_rules"),
+      this._ws("unifi_utopia/overview"),
+      this._ws("unifi_utopia/clients"),
+      this._ws("unifi_utopia/categories"),
+      this._ws("unifi_utopia/localnet_status"),
+      this._ws("unifi_utopia/recommendations"),
+      this._ws("unifi_utopia/miners"),
+      this._ws("unifi_utopia/scan_results"),
+      this._ws("unifi_utopia/report_status"),
+      this._ws("unifi_utopia/learned_rules"),
     ]);
     if (ov) this._overview = ov;
     if (cl) this._data = cl;
@@ -92,7 +92,7 @@ class UniFiBlockerPanel extends HTMLElement {
   _stopPolling() { if (this._pollTimer) { clearInterval(this._pollTimer); this._pollTimer = null; } }
 
   async _action(type, mac) { if (!this._actionMode) return; const r = await this._ws(type, { mac }); if (r && r.ok) setTimeout(() => this._fetchAll(), 800); }
-  async _setCategory(mac, category, name) { const r = await this._ws("unifiblocker/set_category", { mac, category, name: name || undefined }); if (r && r.ok) setTimeout(() => this._fetchAll(), 800); }
+  async _setCategory(mac, category, name) { const r = await this._ws("unifi_utopia/set_category", { mac, category, name: name || undefined }); if (r && r.ok) setTimeout(() => this._fetchAll(), 800); }
   async _quantify() {
     if (!this._actionMode) {
       alert("Action Mode must be enabled to run Quantify.\n\nThis scan identifies unknown devices and automatically categorizes them, which changes device data. Enable Action Mode in the sidebar first.");
@@ -100,7 +100,7 @@ class UniFiBlockerPanel extends HTMLElement {
     }
     const btn = this.shadowRoot.querySelector("[data-quantify]");
     if (btn) { btn.textContent = "🔬 Scanning... this takes a while"; btn.disabled = true; }
-    const r = await this._ws("unifiblocker/deep_scan_unknowns");
+    const r = await this._ws("unifi_utopia/deep_scan_unknowns");
     if (r) {
       this._quantifyResults = r;
       setTimeout(() => this._fetchAll(), 1000);
@@ -113,15 +113,15 @@ class UniFiBlockerPanel extends HTMLElement {
     if (el) el.innerHTML = '<div class="scan-loading">Scanning ~90 ports... this takes a few seconds</div>';
     this._scanning.add(mac.toLowerCase());
     if (!el) this._updateMain();
-    const r = await this._ws("unifiblocker/scan_device", { mac });
+    const r = await this._ws("unifi_utopia/scan_device", { mac });
     this._scanning.delete(mac.toLowerCase());
     if (r) this._scanCache[mac.toLowerCase()] = r;
     this._updateMain();
   }
 
-  async _assignLocal(mac, category, name) { if (!this._actionMode) { alert("Enable Action Mode first."); return; } const r = await this._ws("unifiblocker/localnet_assign", { mac, category, name: name||undefined }); if (r) { alert(r.ok ? `Assigned ${r.ip} to ${mac}` : `Error: ${r.error}`); setTimeout(() => this._fetchAll(), 800); } }
-  async _removeLocal(mac) { if (!this._actionMode) { alert("Enable Action Mode first."); return; } const r = await this._ws("unifiblocker/localnet_remove", { mac }); if (r) setTimeout(() => this._fetchAll(), 800); }
-  async _ensureRule() { if (!this._actionMode) { alert("Enable Action Mode first."); return; } const r = await this._ws("unifiblocker/localnet_ensure_rule"); if (r) alert(r.ok ? `Firewall rule ${r.status}: ${r.rule_id||"done"}` : `Error: ${r.error}`); setTimeout(() => this._fetchAll(), 800); }
+  async _assignLocal(mac, category, name) { if (!this._actionMode) { alert("Enable Action Mode first."); return; } const r = await this._ws("unifi_utopia/localnet_assign", { mac, category, name: name||undefined }); if (r) { alert(r.ok ? `Assigned ${r.ip} to ${mac}` : `Error: ${r.error}`); setTimeout(() => this._fetchAll(), 800); } }
+  async _removeLocal(mac) { if (!this._actionMode) { alert("Enable Action Mode first."); return; } const r = await this._ws("unifi_utopia/localnet_remove", { mac }); if (r) setTimeout(() => this._fetchAll(), 800); }
+  async _ensureRule() { if (!this._actionMode) { alert("Enable Action Mode first."); return; } const r = await this._ws("unifi_utopia/localnet_ensure_rule"); if (r) alert(r.ok ? `Firewall rule ${r.status}: ${r.rule_id||"done"}` : `Error: ${r.error}`); setTimeout(() => this._fetchAll(), 800); }
 
   // ── Render ────────────────────────────────────────────────────────
   _render() {
@@ -145,7 +145,7 @@ class UniFiBlockerPanel extends HTMLElement {
       <style>${CSS}</style>
       <div class="shell">
         <nav class="sidebar">
-          <div class="brand"><div class="brand-icon">🛡</div><div class="brand-text">UniFi Blocker</div><div class="brand-ver">v${VERSION}</div></div>
+          <div class="brand"><div class="brand-icon">🛡</div><div class="brand-text">UniFi Utopia</div><div class="brand-ver">v${VERSION}</div></div>
           <div class="nav-items">
             ${this._nav("overview", "Overview", "📊")}
             ${this._nav("new", "New Devices", "🆕")}
@@ -226,7 +226,7 @@ class UniFiBlockerPanel extends HTMLElement {
     // Counts toward the opt-in report only; the backend ignores it when off.
     if (this._view !== this._lastView) {
       this._lastView = this._view;
-      if (this._report && this._report.enabled) this._ws("unifiblocker/report_view", { view: this._view });
+      if (this._report && this._report.enabled) this._ws("unifi_utopia/report_view", { view: this._view });
     }
   }
 
@@ -241,7 +241,7 @@ class UniFiBlockerPanel extends HTMLElement {
     mc.querySelectorAll("[data-action]").forEach(btn => {
       btn.addEventListener("click", () => {
         if (!this._actionMode) { alert("Enable Action Mode first."); return; }
-        if (confirm(`${btn.dataset.action} device ${btn.dataset.mac}?`)) this._action(`unifiblocker/${btn.dataset.action}`, btn.dataset.mac);
+        if (confirm(`${btn.dataset.action} device ${btn.dataset.mac}?`)) this._action(`unifi_utopia/${btn.dataset.action}`, btn.dataset.mac);
       });
     });
     const checkBtn = mc.querySelector("#checkIpBtn");
@@ -253,7 +253,7 @@ class UniFiBlockerPanel extends HTMLElement {
         const ip = input.value.trim();
         if (!ip) { resultDiv.innerHTML = '<p style="color:#f0a500">Enter an IP address</p>'; return; }
         resultDiv.innerHTML = '<p>Checking...</p>';
-        const r = await this._ws("unifiblocker/check_ip", { ip });
+        const r = await this._ws("unifi_utopia/check_ip", { ip });
         if (r) {
           resultDiv.innerHTML = `
             <div style="font-size:14px;font-weight:700;margin-bottom:8px">${r.summary}</div>
@@ -284,7 +284,7 @@ class UniFiBlockerPanel extends HTMLElement {
         const port = parseInt(btn.dataset.blockport);
         const mac = btn.dataset.blockmac;
         if (confirm(`Block port ${port} for ${mac}? This creates a firewall rule on the UCG Max.`)) {
-          const r = await this._ws("unifiblocker/block_port", { mac, port });
+          const r = await this._ws("unifi_utopia/block_port", { mac, port });
           if (r && r.ok) { alert(`Port ${port} blocked for ${mac}`); btn.textContent = "Blocked"; btn.disabled = true; }
           else alert(`Failed: ${r?.error || "unknown error"}`);
         }
@@ -315,7 +315,7 @@ class UniFiBlockerPanel extends HTMLElement {
     mc.querySelectorAll("[data-clearcat]").forEach(btn => {
       btn.addEventListener("click", async () => {
         if (!this._actionMode) { alert("Enable Action Mode first."); return; }
-        const r = await this._ws("unifiblocker/clear_category", { mac: btn.dataset.clearcat });
+        const r = await this._ws("unifi_utopia/clear_category", { mac: btn.dataset.clearcat });
         if (r && r.ok) { btn.disabled = true; setTimeout(() => this._fetchAll(), 800); }
       });
     });
@@ -381,7 +381,7 @@ class UniFiBlockerPanel extends HTMLElement {
     const r = this._report;
     if (!r) return "";
     const p = this._reportPreview;
-    return `<div class="card"><h2>Help improve UniFi Blocker</h2>
+    return `<div class="card"><h2>Help improve UniFi Utopia</h2>
       <p>Off unless you turn it on. Once a day it sends counts and versions so problems on other networks can be found and fixed: how many clients, cameras and categories, which tools get used, poll times, controller API errors, and warnings logged by the integration.</p>
       <p><strong>Never sent:</strong> MAC or IP addresses, hostnames, device names, vendor strings from your network, entity ids, your controller's address. A check refuses the whole report if anything like that is in it. Press Preview to see exactly what would go.</p>
       <p>Status: ${r.enabled ? `<span class="badge ok">On</span>${r.last_day ? ` · last sent ${r.last_day}` : " · nothing sent yet"}` : '<span class="badge">Off</span>'}</p>
@@ -401,7 +401,7 @@ class UniFiBlockerPanel extends HTMLElement {
       send: ["report_send", {}], newid: ["report_new_id", {}], preview: ["report_preview", {}] }[what];
     if (!cmd) return;
     if (what === "newid" && !confirm("Replace the anonymous ID? Reports after this count as a new install.")) return;
-    const r = await this._ws(`unifiblocker/${cmd[0]}`, cmd[1]);
+    const r = await this._ws(`unifi_utopia/${cmd[0]}`, cmd[1]);
     if (!r) return;
     if (what === "preview") this._reportPreview = r;
     else {
@@ -668,12 +668,12 @@ class UniFiBlockerPanel extends HTMLElement {
     return `
       <button class="btn-back" data-statview="overview">← Back to Overview</button>
       <h1>🚫 Blocked Devices <span class="count">${allBlocked.length}</span></h1>
-      <p class="subtitle">Devices currently blocked on the UniFi controller or quarantined by UniFi Blocker. These devices cannot access the network.</p>
+      <p class="subtitle">Devices currently blocked on the UniFi controller or quarantined by UniFi Utopia. These devices cannot access the network.</p>
 
       <div class="card">
         <h2>What "Blocked" Means</h2>
         <p>A blocked device has its MAC address added to the controller's block list. It can still see your Wi-Fi network and attempt to connect, but the controller will reject the association. The device gets no IP address and cannot send or receive any traffic.</p>
-        <p style="margin-top:8px">To unblock a device, enable <strong>Action Mode</strong> and click the Trust button, or call <code>unifiblocker.unblock_device</code>.</p>
+        <p style="margin-top:8px">To unblock a device, enable <strong>Action Mode</strong> and click the Trust button, or call <code>unifi_utopia.unblock_device</code>.</p>
       </div>
 
       ${allBlocked.length === 0 ? '<div class="empty">No blocked devices. Your network is allowing all connected clients.</div>' : ''}
@@ -754,7 +754,7 @@ class UniFiBlockerPanel extends HTMLElement {
       </div>
 
       <div class="card"><h2>Security events, last 24 hours (${evts.length})</h2>
-        <p class="subtitle">From UniFi's security log. Blocks made by UniFi Blocker's own local-only rules aren't listed here; they're counted above and show on each device.</p>
+        <p class="subtitle">From UniFi's security log. Blocks made by UniFi Utopia's own local-only rules aren't listed here; they're counted above and show on each device.</p>
         ${evts.length ? `<table class="data-table"><thead><tr><th>When</th><th>What</th><th>Severity</th><th>Rule</th></tr></thead><tbody>
           ${evts.slice(0, 50).map(e => `<tr><td class="mono">${e.time ? new Date(e.time).toLocaleString() : "—"}</td><td>${_esc(e.msg || e.title || e.key)}</td><td>${_esc(e.inner_alert_severity || "—")}</td><td>${_esc(e.rule || e.catname || "—")}</td></tr>`).join("")}
         </tbody></table>` : "<div class=\"empty\">Nothing in UniFi's security log.</div>"}
@@ -914,7 +914,7 @@ class UniFiBlockerPanel extends HTMLElement {
   async _ruleUpdate(kind, key, category) {
     // key comes from a data- attribute, which the browser has already turned
     // back from &amp; etc. into the rule's real text.
-    const r = await this._ws("unifiblocker/learned_rule_update", { kind, key, category: category ?? null });
+    const r = await this._ws("unifi_utopia/learned_rule_update", { kind, key, category: category ?? null });
     if (r && r.ok) { this._learned = r; this._updateMain(); }
   }
 
@@ -935,7 +935,7 @@ class UniFiBlockerPanel extends HTMLElement {
         clients = this._catCache[cat];
       } else {
         // Trigger async fetch.
-        this._ws("unifiblocker/category_clients", { category: cat }).then(r => {
+        this._ws("unifi_utopia/category_clients", { category: cat }).then(r => {
           if (r && r.clients) {
             this._catCache[cat] = r.clients;
             this._updateMain();
@@ -1131,7 +1131,7 @@ class UniFiBlockerPanel extends HTMLElement {
       devices = this._catCache["nas"];
     }
     if (devices.length === 0 && this._hasNasDevices()) {
-      this._ws("unifiblocker/category_clients", { category: "nas" }).then(r => {
+      this._ws("unifi_utopia/category_clients", { category: "nas" }).then(r => {
         if (r && r.clients) {
           if (!this._catCache) this._catCache = {};
           this._catCache["nas"] = r.clients;
@@ -1859,6 +1859,6 @@ h2{font-size:15px;font-weight:600;margin-bottom:10px}.subtitle{color:var(--secon
 `;
 
 // Guard against double-registration (HA can load the script multiple times).
-if (!customElements.get("unifiblocker-panel")) {
-  customElements.define("unifiblocker-panel", UniFiBlockerPanel);
+if (!customElements.get("unifi-utopia-panel")) {
+  customElements.define("unifi-utopia-panel", UniFiUtopiaPanel);
 }

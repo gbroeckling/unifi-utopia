@@ -1,7 +1,7 @@
-"""Opt-in usage and issue report — "help improve UniFi Blocker".
+"""Opt-in usage and issue report — "help improve UniFi Utopia".
 
 OFF by default. Nothing here sends anything until an admin turns it on in the
-panel (Overview → Help improve UniFi Blocker), where Preview shows the exact
+panel (Overview → Help improve UniFi Utopia), where Preview shows the exact
 JSON that will go. Same promise as PadSpan's report: counts and versions,
 never things.
 
@@ -55,7 +55,7 @@ _LOGGER = logging.getLogger(__name__)
 
 REPORT_URL = "https://unifiblocker.enerx.ca/api/report.php"
 SCHEMA = 1
-STORAGE_KEY = "unifiblocker_report"
+STORAGE_KEY = "unifi_utopia_report"
 MAX_BYTES = 8192
 _FIRST_DELAY_S = 600          # never during startup
 _CHECK_EVERY = timedelta(hours=6)
@@ -133,7 +133,7 @@ class _State:
         self.poll_ms_total = self.poll_ms_max = 0.0
 
 
-# Only one UniFi Blocker entry is allowed, and the API client has no hass to
+# Only one UniFi Utopia entry is allowed, and the API client has no hass to
 # look things up with, so the counters live at module level.
 _state = _State()
 
@@ -189,13 +189,13 @@ class _LogCounter(logging.Handler):
             return
         try:
             name = record.name
-            if name.startswith("custom_components.unifiblocker"):
+            if name.startswith("custom_components.unifi_utopia"):
                 key = f"{name.rsplit('.', 1)[-1]}:{record.levelname}"
                 with _state.lock:
                     _state.log[key] = _state.log.get(key, 0) + 1
                 return
             msg = record.getMessage()
-            if name == "homeassistant.helpers.entity" and "custom_components.unifiblocker" in msg:
+            if name == "homeassistant.helpers.entity" and "custom_components.unifi_utopia" in msg:
                 with _state.lock:
                     _state.slow_updates += 1
             elif name == "homeassistant.components.recorder.db_schema" and "exceed maximum size" in msg:
@@ -207,7 +207,7 @@ class _LogCounter(logging.Handler):
 
 
 _HANDLER = _LogCounter()
-_WATCHED_LOGGERS = ("custom_components.unifiblocker", "homeassistant.helpers.entity",
+_WATCHED_LOGGERS = ("custom_components.unifi_utopia", "homeassistant.helpers.entity",
                     "homeassistant.components.recorder.db_schema")
 
 
@@ -508,7 +508,7 @@ def _status(mgr: ReportManager) -> dict[str, Any]:
 
 
 @websocket_api.require_admin
-@websocket_api.websocket_command({vol.Required("type"): "unifiblocker/report_status"})
+@websocket_api.websocket_command({vol.Required("type"): "unifi_utopia/report_status"})
 @websocket_api.async_response
 async def ws_report_status(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
     mgr = _manager(hass)
@@ -520,7 +520,7 @@ async def ws_report_status(hass: HomeAssistant, connection: websocket_api.Active
 
 @websocket_api.require_admin
 @websocket_api.websocket_command({
-    vol.Required("type"): "unifiblocker/report_set",
+    vol.Required("type"): "unifi_utopia/report_set",
     vol.Required("enabled"): bool,
 })
 @websocket_api.async_response
@@ -534,7 +534,7 @@ async def ws_report_set(hass: HomeAssistant, connection: websocket_api.ActiveCon
 
 
 @websocket_api.require_admin
-@websocket_api.websocket_command({vol.Required("type"): "unifiblocker/report_preview"})
+@websocket_api.websocket_command({vol.Required("type"): "unifi_utopia/report_preview"})
 @websocket_api.async_response
 async def ws_report_preview(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
     mgr = _manager(hass)
@@ -545,7 +545,7 @@ async def ws_report_preview(hass: HomeAssistant, connection: websocket_api.Activ
 
 
 @websocket_api.require_admin
-@websocket_api.websocket_command({vol.Required("type"): "unifiblocker/report_send"})
+@websocket_api.websocket_command({vol.Required("type"): "unifi_utopia/report_send"})
 @websocket_api.async_response
 async def ws_report_send(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
     mgr = _manager(hass)
@@ -557,7 +557,7 @@ async def ws_report_send(hass: HomeAssistant, connection: websocket_api.ActiveCo
 
 
 @websocket_api.require_admin
-@websocket_api.websocket_command({vol.Required("type"): "unifiblocker/report_new_id"})
+@websocket_api.websocket_command({vol.Required("type"): "unifi_utopia/report_new_id"})
 @websocket_api.async_response
 async def ws_report_new_id(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict) -> None:
     mgr = _manager(hass)
@@ -570,7 +570,7 @@ async def ws_report_new_id(hass: HomeAssistant, connection: websocket_api.Active
 
 @websocket_api.require_admin
 @websocket_api.websocket_command({
-    vol.Required("type"): "unifiblocker/report_view",
+    vol.Required("type"): "unifi_utopia/report_view",
     vol.Required("view"): str,
 })
 @callback

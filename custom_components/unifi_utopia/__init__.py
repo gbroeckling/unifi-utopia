@@ -1,4 +1,4 @@
-"""UniFi Blocker – network device review & quarantine for Home Assistant."""
+"""UniFi Utopia – network device review & quarantine for Home Assistant."""
 from __future__ import annotations
 
 import logging
@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
 
-DOMAIN = "unifiblocker"
+DOMAIN = "unifi_utopia"
 PLATFORMS = ["sensor", "binary_sensor"]
 
 try:
@@ -30,7 +30,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         await _do_setup(hass, entry)
     except Exception:
-        _LOGGER.exception("UniFi Blocker setup failed")
+        _LOGGER.exception("UniFi Utopia setup failed")
         raise
 
     return True
@@ -47,7 +47,7 @@ async def _do_setup(hass: HomeAssistant, entry: ConfigEntry) -> None:
         DEFAULT_SITE, DEFAULT_VERIFY_SSL,
         STATE_IGNORED, STATE_QUARANTINED, STATE_TRUSTED,
     )
-    from .coordinator import UniFiBlockerCoordinator
+    from .coordinator import UniFiUtopiaCoordinator
     from .device_store import DeviceStore
     from .unifi_api import UniFiApi
 
@@ -122,7 +122,7 @@ async def _do_setup(hass: HomeAssistant, entry: ConfigEntry) -> None:
         _LOGGER.warning("Local network manager failed to load", exc_info=True)
         local_net = None
 
-    coordinator = UniFiBlockerCoordinator(
+    coordinator = UniFiUtopiaCoordinator(
         hass, api, store,
         update_interval=data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
         scanner=scanner,
@@ -211,7 +211,7 @@ async def _do_setup(hass: HomeAssistant, entry: ConfigEntry) -> None:
             for d in hass.data.get(DOMAIN, {}).values():
                 if isinstance(d, dict) and "coordinator" in d:
                     return d
-            raise HomeAssistantError("UniFi Blocker is not loaded")
+            raise HomeAssistantError("UniFi Utopia is not loaded")
 
         async def h_scan(c):
             d = _loaded()

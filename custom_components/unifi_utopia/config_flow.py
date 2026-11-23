@@ -1,4 +1,4 @@
-"""Config flow for UniFi Blocker."""
+"""Config flow for UniFi Utopia."""
 from __future__ import annotations
 
 import ipaddress
@@ -11,7 +11,7 @@ from homeassistant import config_entries
 
 _LOGGER = logging.getLogger(__name__)
 
-DOMAIN = "unifiblocker"
+DOMAIN = "unifi_utopia"
 
 from .policy import CAMERA_POLICIES, DEFAULT_CAMERA_POLICY, DEFAULT_DEVICE_POLICY, DEVICE_POLICIES
 
@@ -79,8 +79,8 @@ def local_prefix_from_cidr(cidr: str) -> str:
     return str(ipaddress.ip_network(cidr, strict=False).network_address).rsplit(".", 1)[0]
 
 
-class UniFiBlockerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for UniFi Blocker."""
+class UniFiUtopiaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Handle a config flow for UniFi Utopia."""
 
     VERSION = 1
 
@@ -98,7 +98,7 @@ class UniFiBlockerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = error
             else:
                 return self.async_create_entry(
-                    title=f"UniFi Blocker ({user_input['host']})",
+                    title=f"UniFi Utopia ({user_input['host']})",
                     data=user_input,
                 )
 
@@ -123,7 +123,7 @@ class UniFiBlockerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 # The update listener in __init__ reloads the entry.
                 self.hass.config_entries.async_update_entry(
                     entry,
-                    title=f"UniFi Blocker ({user_input['host']})",
+                    title=f"UniFi Utopia ({user_input['host']})",
                     data={**entry.data, **user_input},
                 )
                 return self.async_abort(reason="reconfigure_successful")

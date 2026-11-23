@@ -220,7 +220,7 @@ class KevFeed:
         from homeassistant.helpers.storage import Store
 
         self.hass = hass
-        self._store = Store(hass, 1, "unifiblocker_kev")
+        self._store = Store(hass, 1, "unifi_utopia_kev")
         self._etag = ""
         self._unsub: Any = None
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0 — 2026-11-23
+
+UniFi Blocker is now UniFi Utopia.
+
+- The integration's name inside Home Assistant is `unifi_utopia`: its services are `unifi_utopia.trust_device`, `unifi_utopia.block_device` and so on, its events `unifi_utopia_new_device`, `unifi_utopia_new_camera` and `unifi_utopia_containment_failed`, and its panel is at `/unifi-utopia`.
+- The repository is github.com/gbroeckling/unifi-utopia (the old address forwards to it).
+- Rules it made on your controller keep their `UB: <mac> local-only` description, so the ones already there are still found.
+- An existing UniFi Blocker install is a separate integration to Home Assistant: remove it, install UniFi Utopia, and add it again with the same controller.
+
 ## 0.3.61 — 2026-10-21
 
 Review fixes.

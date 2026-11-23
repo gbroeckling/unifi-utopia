@@ -1,28 +1,28 @@
-# Contributing to UniFi Blocker
+# Contributing to UniFi Utopia
 
-Thanks for your interest in contributing to UniFi Blocker! This is a Home Assistant
+Thanks for your interest in contributing to UniFi Utopia! This is a Home Assistant
 custom integration for UniFi network device review and quarantine.
 
 ## Reporting Bugs
 
-Please use the [Bug Report](https://github.com/gbroeckling/unifiblocker/issues/new?template=bug_report.yml)
-issue template. Include your UniFi Blocker version, Home Assistant version, and
+Please use the [Bug Report](https://github.com/gbroeckling/unifi-utopia/issues/new?template=bug_report.yml)
+issue template. Include your UniFi Utopia version, Home Assistant version, and
 controller model so we can reproduce the problem.
 
 ## Requesting Features
 
-Use the [Feature Request](https://github.com/gbroeckling/unifiblocker/issues/new?template=feature_request.yml)
+Use the [Feature Request](https://github.com/gbroeckling/unifi-utopia/issues/new?template=feature_request.yml)
 template. Describe your use case so we understand *why* the feature matters.
 
 ## Development Setup
 
 1. Fork the repository and clone it.
-2. Copy (or symlink) the `custom_components/unifiblocker` folder into your Home
+2. Copy (or symlink) the `custom_components/unifi_utopia` folder into your Home
    Assistant `config/custom_components/` directory.
 3. Restart Home Assistant to load the integration.
 4. Alternatively, add this repo as a HACS custom repository for easier testing:
    - HACS > Integrations > three-dot menu > Custom repositories
-   - URL: `https://github.com/gbroeckling/unifiblocker`
+   - URL: `https://github.com/gbroeckling/unifi-utopia`
    - Category: Integration
 
 ## Code Style
@@ -40,7 +40,7 @@ template. Describe your use case so we understand *why* the feature matters.
 
 ## How This Project Is Built
 
-UniFi Blocker is built by [Garry Broeckling](https://github.com/gbroeckling).
+UniFi Utopia is built by [Garry Broeckling](https://github.com/gbroeckling).
 Architecture, product decisions, testing, and releases are human-directed.
 Implementation is AI-assisted using [Claude](https://claude.ai) by Anthropic.
 

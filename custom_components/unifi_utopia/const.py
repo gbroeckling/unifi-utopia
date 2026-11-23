@@ -1,6 +1,6 @@
-"""Constants for UniFi Blocker."""
+"""Constants for UniFi Utopia."""
 
-DOMAIN = "unifiblocker"
+DOMAIN = "unifi_utopia"
 PLATFORMS: list[str] = ["sensor", "binary_sensor"]
 
 # ── Config keys ──────────────────────────────────────────────────────

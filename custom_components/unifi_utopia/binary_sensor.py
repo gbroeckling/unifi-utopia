@@ -1,4 +1,4 @@
-"""Binary sensor platform for UniFi Blocker."""
+"""Binary sensor platform for UniFi Utopia."""
 from __future__ import annotations
 
 from homeassistant.components.binary_sensor import (
@@ -11,7 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
-from .coordinator import UniFiBlockerCoordinator, UniFiBlockerData
+from .coordinator import UniFiUtopiaCoordinator, UniFiUtopiaData
 
 
 async def async_setup_entry(
@@ -20,7 +20,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up binary sensor entities."""
-    coordinator: UniFiBlockerCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
+    coordinator: UniFiUtopiaCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
     async_add_entities([
         NewDevicesPendingBinarySensor(coordinator, entry),
         SuspiciousTrafficBinarySensor(coordinator, entry),
@@ -29,7 +29,7 @@ async def async_setup_entry(
 
 
 class NewDevicesPendingBinarySensor(
-    CoordinatorEntity[UniFiBlockerCoordinator], BinarySensorEntity
+    CoordinatorEntity[UniFiUtopiaCoordinator], BinarySensorEntity
 ):
     """ON when there are new devices awaiting review."""
 
@@ -42,14 +42,14 @@ class NewDevicesPendingBinarySensor(
 
     def __init__(
         self,
-        coordinator: UniFiBlockerCoordinator,
+        coordinator: UniFiUtopiaCoordinator,
         entry: ConfigEntry,
     ) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_pending_review"
 
     @property
-    def _data(self) -> UniFiBlockerData | None:
+    def _data(self) -> UniFiUtopiaData | None:
         return self.coordinator.data
 
     @property
@@ -72,7 +72,7 @@ class NewDevicesPendingBinarySensor(
 
 
 class SuspiciousTrafficBinarySensor(
-    CoordinatorEntity[UniFiBlockerCoordinator], BinarySensorEntity
+    CoordinatorEntity[UniFiUtopiaCoordinator], BinarySensorEntity
 ):
     """ON when any connected client has suspicious traffic indicators."""
 
@@ -84,14 +84,14 @@ class SuspiciousTrafficBinarySensor(
 
     def __init__(
         self,
-        coordinator: UniFiBlockerCoordinator,
+        coordinator: UniFiUtopiaCoordinator,
         entry: ConfigEntry,
     ) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_suspicious_traffic"
 
     @property
-    def _data(self) -> UniFiBlockerData | None:
+    def _data(self) -> UniFiUtopiaData | None:
         return self.coordinator.data
 
     @property
@@ -114,7 +114,7 @@ class SuspiciousTrafficBinarySensor(
 
 
 class ControllerReachableBinarySensor(
-    CoordinatorEntity[UniFiBlockerCoordinator], BinarySensorEntity
+    CoordinatorEntity[UniFiUtopiaCoordinator], BinarySensorEntity
 ):
     """ON when the UCG Max controller is reachable and authenticated."""
 
@@ -125,14 +125,14 @@ class ControllerReachableBinarySensor(
 
     def __init__(
         self,
-        coordinator: UniFiBlockerCoordinator,
+        coordinator: UniFiUtopiaCoordinator,
         entry: ConfigEntry,
     ) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_controller_reachable"
 
     @property
-    def _data(self) -> UniFiBlockerData | None:
+    def _data(self) -> UniFiUtopiaData | None:
         return self.coordinator.data
 
     @property

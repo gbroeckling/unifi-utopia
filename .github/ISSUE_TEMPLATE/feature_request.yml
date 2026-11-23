@@ -1,5 +1,5 @@
 name: Feature Request
-description: Suggest a new feature or improvement for UniFi Blocker
+description: Suggest a new feature or improvement for UniFi Utopia
 labels: ["enhancement"]
 body:
   - type: textarea

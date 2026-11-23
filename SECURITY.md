@@ -8,11 +8,11 @@
 
 ## Reporting a Vulnerability
 
-If you find a security issue in UniFi Blocker, **please do not open a public GitHub issue.**
+If you find a security issue in UniFi Utopia, **please do not open a public GitHub issue.**
 
 Instead, report it privately:
 
-1. Go to the [Security Advisories](https://github.com/gbroeckling/unifiblocker/security/advisories) page
+1. Go to the [Security Advisories](https://github.com/gbroeckling/unifi-utopia/security/advisories) page
 2. Click **"Report a vulnerability"**
 3. Describe the issue and how to reproduce it
 

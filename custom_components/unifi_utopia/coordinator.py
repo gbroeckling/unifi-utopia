@@ -1,4 +1,4 @@
-"""DataUpdateCoordinator for UniFi Blocker."""
+"""DataUpdateCoordinator for UniFi Utopia."""
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
@@ -39,7 +39,7 @@ ONVIF_PROBES_PER_PASS = 3
 ONVIF_HINT_PORTS = frozenset({80, 2020, 8000, 8080, 8899})
 
 
-class UniFiBlockerData:
+class UniFiUtopiaData:
     """Snapshot returned by the coordinator after each poll."""
 
     def __init__(
@@ -80,7 +80,7 @@ class UniFiBlockerData:
         self._security_by_mac = events_by_mac(self.security)
         self._contained_by_mac = events_by_mac(self.security, ours=True)
         # Several entities enrich the same clients on every update; do it once
-        # per poll. Each poll builds a new UniFiBlockerData, so this never
+        # per poll. Each poll builds a new UniFiUtopiaData, so this never
         # outlives the data it was built from.
         self._enriched: dict[str, dict[str, Any]] = {}
         self._enriched_rev = store.rev
@@ -310,7 +310,7 @@ class UniFiBlockerData:
         return [self.enrich_client(c) for c in self.clients]
 
 
-class UniFiBlockerCoordinator(DataUpdateCoordinator[UniFiBlockerData]):
+class UniFiUtopiaCoordinator(DataUpdateCoordinator[UniFiUtopiaData]):
     """Poll the UniFi controller and reconcile device states."""
 
     def __init__(
@@ -405,11 +405,11 @@ class UniFiBlockerCoordinator(DataUpdateCoordinator[UniFiBlockerData]):
         entry = getattr(self, "config_entry", None)
         if entry is not None:
             # Tied to the entry, so it's cancelled on unload/reload.
-            entry.async_create_background_task(self.hass, _run(), "unifiblocker onvif")
+            entry.async_create_background_task(self.hass, _run(), "unifi_utopia onvif")
         else:
-            self.hass.async_create_background_task(_run(), "unifiblocker onvif")
+            self.hass.async_create_background_task(_run(), "unifi_utopia onvif")
 
-    async def _async_update_data(self) -> UniFiBlockerData:
+    async def _async_update_data(self) -> UniFiUtopiaData:
         """Fetch clients from the controller and update the store."""
         started = time.monotonic()
         try:
@@ -555,7 +555,7 @@ class UniFiBlockerCoordinator(DataUpdateCoordinator[UniFiBlockerData]):
         contained = self._contained_macs(clients)
         watched = self._watched_macs(clients, categories, contained)
         await self._refresh_slow_sources(now_ts, watched)
-        data = UniFiBlockerData(
+        data = UniFiUtopiaData(
             clients=clients,
             devices=devices,
             store=self.store,
@@ -581,8 +581,8 @@ class UniFiBlockerCoordinator(DataUpdateCoordinator[UniFiBlockerData]):
         self._announce_leaks(data, now_ts)
         return data
 
-    def _announce_leaks(self, data: UniFiBlockerData, now_ts: float) -> None:
-        """Fire unifiblocker_containment_failed (at most daily per device)
+    def _announce_leaks(self, data: UniFiUtopiaData, now_ts: float) -> None:
+        """Fire unifi_utopia_containment_failed (at most daily per device)
         when UniFi logs traffic it let through from a device that's meant to
         be cut off."""
         for client in data.clients:
@@ -660,8 +660,8 @@ class UniFiBlockerCoordinator(DataUpdateCoordinator[UniFiBlockerData]):
         await due("rogue", ROGUE_EVERY_S, rogue)
         await due("flows", FLOWS_EVERY_S, flows)
 
-    def _announce_new_devices(self, data: UniFiBlockerData, new_macs: list[str]) -> None:
-        """unifiblocker_new_device per device seen for the first time, plus
+    def _announce_new_devices(self, data: UniFiUtopiaData, new_macs: list[str]) -> None:
+        """unifi_utopia_new_device per device seen for the first time, plus
         one notification (new_device_policy). Cameras are handled by
         _announce_new_cameras."""
         if not new_macs:
@@ -681,8 +681,8 @@ class UniFiBlockerCoordinator(DataUpdateCoordinator[UniFiBlockerData]):
         from .policy import on_new_devices
         on_new_devices(self.hass, self._device_policy, fresh)
 
-    async def _announce_new_cameras(self, data: UniFiBlockerData) -> None:
-        """Fire unifiblocker_new_camera once for each camera seen for the
+    async def _announce_new_cameras(self, data: UniFiUtopiaData) -> None:
+        """Fire unifi_utopia_new_camera once for each camera seen for the
         first time, so automations can notify, scan or isolate it, and apply
         new_camera_policy (see policy.py)."""
         from .policy import on_new_camera

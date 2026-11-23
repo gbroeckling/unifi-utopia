@@ -1,4 +1,4 @@
-"""WebSocket API for the UniFi Blocker frontend panel."""
+"""WebSocket API for the UniFi Utopia frontend panel."""
 from __future__ import annotations
 
 import logging
@@ -72,7 +72,7 @@ def _get_coordinator(hass: HomeAssistant):
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "unifiblocker/clients"}
+    {vol.Required("type"): "unifi_utopia/clients"}
 )
 @websocket_api.async_response
 async def ws_get_clients(
@@ -127,7 +127,7 @@ async def ws_get_clients(
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "unifiblocker/overview"}
+    {vol.Required("type"): "unifi_utopia/overview"}
 )
 @websocket_api.async_response
 async def ws_get_overview(
@@ -168,7 +168,7 @@ async def ws_get_overview(
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "unifiblocker/categories"}
+    {vol.Required("type"): "unifi_utopia/categories"}
 )
 @websocket_api.async_response
 async def ws_get_categories(
@@ -197,7 +197,7 @@ async def ws_get_categories(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "unifiblocker/category_clients",
+        vol.Required("type"): "unifi_utopia/category_clients",
         vol.Required("category"): str,
     }
 )
@@ -254,7 +254,7 @@ async def ws_get_category_clients(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "unifiblocker/set_category",
+        vol.Required("type"): "unifi_utopia/set_category",
         vol.Required("mac"): str,
         vol.Required("category"): str,
         vol.Optional("name"): str,
@@ -310,7 +310,7 @@ async def ws_set_category(
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "unifiblocker/learned_rules"}
+    {vol.Required("type"): "unifi_utopia/learned_rules"}
 )
 @websocket_api.async_response
 async def ws_get_learned(
@@ -328,7 +328,7 @@ async def ws_get_learned(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "unifiblocker/learned_rule_update",
+        vol.Required("type"): "unifi_utopia/learned_rule_update",
         vol.Required("kind"): vol.In(["vendor", "hostname", "mac", "port"]),
         vol.Required("key"): str,
         # Omit (or null) to delete the rule.
@@ -359,7 +359,7 @@ async def ws_learned_rule_update(
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "unifiblocker/suggestions"}
+    {vol.Required("type"): "unifi_utopia/suggestions"}
 )
 @websocket_api.async_response
 async def ws_get_suggestions(
@@ -403,7 +403,7 @@ async def ws_get_suggestions(
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "unifiblocker/onvif_discover"}
+    {vol.Required("type"): "unifi_utopia/onvif_discover"}
 )
 @websocket_api.async_response
 async def ws_onvif_discover(
@@ -424,7 +424,7 @@ async def ws_onvif_discover(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "unifiblocker/onvif_probe",
+        vol.Required("type"): "unifi_utopia/onvif_probe",
         vol.Required("ip"): str,
     }
 )
@@ -443,7 +443,7 @@ async def ws_onvif_probe(
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "unifiblocker/onvif_results"}
+    {vol.Required("type"): "unifi_utopia/onvif_results"}
 )
 @websocket_api.async_response
 async def ws_onvif_results(
@@ -466,7 +466,7 @@ async def ws_onvif_results(
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "unifiblocker/recommendations"}
+    {vol.Required("type"): "unifi_utopia/recommendations"}
 )
 @websocket_api.async_response
 async def ws_get_recommendations(
@@ -534,7 +534,7 @@ async def ws_get_recommendations(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "unifiblocker/check_ip",
+        vol.Required("type"): "unifi_utopia/check_ip",
         vol.Required("ip"): str,
     }
 )
@@ -701,7 +701,7 @@ async def ws_check_ip_free(
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "unifiblocker/deep_scan_unknowns"}
+    {vol.Required("type"): "unifi_utopia/deep_scan_unknowns"}
 )
 @websocket_api.async_response
 async def ws_deep_scan_unknowns(
@@ -718,7 +718,7 @@ async def ws_deep_scan_unknowns(
 
 async def run_quantify(hass: HomeAssistant, entry: dict) -> dict[str, Any]:
     """Quantify: deep-scan every unknown device. Shared by the panel button
-    and the unifiblocker.run_quantify service."""
+    and the unifi_utopia.run_quantify service."""
     from .deep_scan import deep_scan_multiple
     from .vendor_lookup import lookup_vendor_safe
 
@@ -794,7 +794,7 @@ async def run_quantify(hass: HomeAssistant, entry: dict) -> dict[str, Any]:
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "unifiblocker/clear_category",
+        vol.Required("type"): "unifi_utopia/clear_category",
         vol.Required("mac"): str,
     }
 )
@@ -818,7 +818,7 @@ async def ws_clear_category(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "unifiblocker/scan_device",
+        vol.Required("type"): "unifi_utopia/scan_device",
         vol.Required("mac"): str,
     }
 )
@@ -859,7 +859,7 @@ async def ws_scan_device(
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "unifiblocker/scan_results"}
+    {vol.Required("type"): "unifi_utopia/scan_results"}
 )
 @websocket_api.async_response
 async def ws_scan_results(
@@ -880,7 +880,7 @@ async def ws_scan_results(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "unifiblocker/block_port",
+        vol.Required("type"): "unifi_utopia/block_port",
         vol.Required("mac"): str,
         vol.Required("port"): int,
         vol.Optional("protocol", default="tcp"): str,
@@ -907,7 +907,7 @@ async def ws_block_port(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "unifiblocker/block_ports",
+        vol.Required("type"): "unifi_utopia/block_ports",
         vol.Required("mac"): str,
         vol.Required("ports"): [int],
         vol.Optional("protocol", default="tcp"): str,
@@ -936,7 +936,7 @@ async def ws_block_ports(
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "unifiblocker/localnet_status"}
+    {vol.Required("type"): "unifi_utopia/localnet_status"}
 )
 @websocket_api.async_response
 async def ws_localnet_status(
@@ -967,7 +967,7 @@ async def ws_localnet_status(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "unifiblocker/localnet_assign",
+        vol.Required("type"): "unifi_utopia/localnet_assign",
         vol.Required("mac"): str,
         vol.Required("category"): str,
         vol.Optional("name"): str,
@@ -995,7 +995,7 @@ async def ws_localnet_assign(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "unifiblocker/localnet_remove",
+        vol.Required("type"): "unifi_utopia/localnet_remove",
         vol.Required("mac"): str,
     }
 )
@@ -1017,7 +1017,7 @@ async def ws_localnet_remove(
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "unifiblocker/localnet_ensure_rule"}
+    {vol.Required("type"): "unifi_utopia/localnet_ensure_rule"}
 )
 @websocket_api.async_response
 async def ws_localnet_ensure_rule(
@@ -1038,7 +1038,7 @@ async def ws_localnet_ensure_rule(
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "unifiblocker/firewall_rules_debug"}
+    {vol.Required("type"): "unifi_utopia/firewall_rules_debug"}
 )
 @websocket_api.async_response
 async def ws_firewall_rules_debug(
@@ -1076,7 +1076,7 @@ async def ws_firewall_rules_debug(
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "unifiblocker/traffic_rules_debug"}
+    {vol.Required("type"): "unifi_utopia/traffic_rules_debug"}
 )
 @websocket_api.async_response
 async def ws_traffic_rules_debug(
@@ -1101,7 +1101,7 @@ async def ws_traffic_rules_debug(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "unifiblocker/trust",
+        vol.Required("type"): "unifi_utopia/trust",
         vol.Required("mac"): str,
     }
 )
@@ -1123,7 +1123,7 @@ async def ws_trust_device(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "unifiblocker/ignore",
+        vol.Required("type"): "unifi_utopia/ignore",
         vol.Required("mac"): str,
     }
 )
@@ -1145,7 +1145,7 @@ async def ws_ignore_device(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "unifiblocker/quarantine",
+        vol.Required("type"): "unifi_utopia/quarantine",
         vol.Required("mac"): str,
     }
 )
@@ -1168,7 +1168,7 @@ async def ws_quarantine_device(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "unifiblocker/block",
+        vol.Required("type"): "unifi_utopia/block",
         vol.Required("mac"): str,
     }
 )
@@ -1190,7 +1190,7 @@ async def ws_block_device(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "unifiblocker/unblock",
+        vol.Required("type"): "unifi_utopia/unblock",
         vol.Required("mac"): str,
     }
 )
@@ -1212,7 +1212,7 @@ async def ws_unblock_device(
 @websocket_api.require_admin
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "unifiblocker/reconnect",
+        vol.Required("type"): "unifi_utopia/reconnect",
         vol.Required("mac"): str,
     }
 )
@@ -1233,7 +1233,7 @@ async def ws_reconnect_device(
 
 @websocket_api.require_admin
 @websocket_api.websocket_command(
-    {vol.Required("type"): "unifiblocker/miners"}
+    {vol.Required("type"): "unifi_utopia/miners"}
 )
 @websocket_api.async_response
 async def ws_get_miners(

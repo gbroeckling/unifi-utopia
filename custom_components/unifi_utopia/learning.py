@@ -30,7 +30,7 @@ from .suspicious_traffic import _is_locally_administered as is_randomized_mac
 
 _LOGGER = logging.getLogger(__name__)
 
-STORAGE_KEY = "unifiblocker_learned"
+STORAGE_KEY = "unifi_utopia_learned"
 STORAGE_VERSION = 1
 
 

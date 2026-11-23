@@ -1,5 +1,5 @@
 ###############################################################################
-#  UniFi Blocker – Complete Dashboard
+#  UniFi Utopia – Complete Dashboard
 #
 #  Copy this into a manual Lovelace dashboard in HA:
 #    Settings → Dashboards → Add Dashboard → choose "YAML" mode
@@ -9,7 +9,7 @@
 #  and paste everything below.
 ###############################################################################
 
-title: UniFi Blocker
+title: UniFi Utopia
 views:
 
   # ════════════════════════════════════════════════════════════════════
@@ -25,11 +25,11 @@ views:
       - type: horizontal-stack
         cards:
           - type: entity
-            entity: binary_sensor.unifiblocker_controller_reachable
+            entity: binary_sensor.unifi_utopia_controller_reachable
             name: UCG Max
             state_color: true
           - type: entity
-            entity: sensor.unifiblocker_connection_health
+            entity: sensor.unifi_utopia_connection_health
             name: Connection
             state_color: true
 
@@ -37,15 +37,15 @@ views:
       - type: horizontal-stack
         cards:
           - type: entity
-            entity: sensor.unifiblocker_connected_clients
+            entity: sensor.unifi_utopia_connected_clients
             name: Connected
             icon: mdi:devices
           - type: entity
-            entity: sensor.unifiblocker_wireless_clients
+            entity: sensor.unifi_utopia_wireless_clients
             name: Wireless
             icon: mdi:wifi
           - type: entity
-            entity: sensor.unifiblocker_wired_clients
+            entity: sensor.unifi_utopia_wired_clients
             name: Wired
             icon: mdi:ethernet
 
@@ -53,23 +53,23 @@ views:
       - type: horizontal-stack
         cards:
           - type: entity
-            entity: sensor.unifiblocker_new_devices
+            entity: sensor.unifi_utopia_new_devices
             name: New
             icon: mdi:alert-decagram
           - type: entity
-            entity: sensor.unifiblocker_suspicious_devices
+            entity: sensor.unifi_utopia_suspicious_devices
             name: Suspicious
             icon: mdi:alert-octagon
           - type: entity
-            entity: sensor.unifiblocker_blocked_devices
+            entity: sensor.unifi_utopia_blocked_devices
             name: Blocked
             icon: mdi:block-helper
           - type: entity
-            entity: sensor.unifiblocker_quarantined_devices
+            entity: sensor.unifi_utopia_quarantined_devices
             name: Quarantined
             icon: mdi:shield-alert
           - type: entity
-            entity: sensor.unifiblocker_trusted_devices
+            entity: sensor.unifi_utopia_trusted_devices
             name: Trusted
             icon: mdi:shield-check
 
@@ -77,17 +77,17 @@ views:
       - type: horizontal-stack
         cards:
           - type: entity
-            entity: binary_sensor.unifiblocker_devices_pending_review
+            entity: binary_sensor.unifi_utopia_devices_pending_review
             name: New Devices Alert
             state_color: true
           - type: entity
-            entity: binary_sensor.unifiblocker_suspicious_traffic_detected
+            entity: binary_sensor.unifi_utopia_suspicious_traffic_detected
             name: Suspicious Traffic Alert
             state_color: true
 
       # ── threat events ──────────────────────────────────────────────
       - type: entity
-        entity: sensor.unifiblocker_threat_events
+        entity: sensor.unifi_utopia_threat_events
         name: IDS/IPS Threat Events
         icon: mdi:shield-bug
 
@@ -95,12 +95,12 @@ views:
       - type: markdown
         title: Controller Status
         content: >
-          {% set h = state_attr('sensor.unifiblocker_connection_health', 'controller_hostname') %}
-          {% set v = state_attr('sensor.unifiblocker_connection_health', 'controller_version') %}
-          {% set u = state_attr('sensor.unifiblocker_connection_health', 'controller_uptime') %}
-          {% set wan = state_attr('sensor.unifiblocker_connection_health', 'wan_status') %}
-          {% set lan = state_attr('sensor.unifiblocker_connection_health', 'lan_status') %}
-          {% set wlan = state_attr('sensor.unifiblocker_connection_health', 'wlan_status') %}
+          {% set h = state_attr('sensor.unifi_utopia_connection_health', 'controller_hostname') %}
+          {% set v = state_attr('sensor.unifi_utopia_connection_health', 'controller_version') %}
+          {% set u = state_attr('sensor.unifi_utopia_connection_health', 'controller_uptime') %}
+          {% set wan = state_attr('sensor.unifi_utopia_connection_health', 'wan_status') %}
+          {% set lan = state_attr('sensor.unifi_utopia_connection_health', 'lan_status') %}
+          {% set wlan = state_attr('sensor.unifi_utopia_connection_health', 'wlan_status') %}
           | Property | Value |
           |----------|-------|
           | Hostname | {{ h or '—' }} |
@@ -115,24 +115,24 @@ views:
         title: Client count (24 h)
         hours_to_show: 24
         entities:
-          - entity: sensor.unifiblocker_connected_clients
+          - entity: sensor.unifi_utopia_connected_clients
             name: Total
-          - entity: sensor.unifiblocker_wireless_clients
+          - entity: sensor.unifi_utopia_wireless_clients
             name: Wireless
-          - entity: sensor.unifiblocker_wired_clients
+          - entity: sensor.unifi_utopia_wired_clients
             name: Wired
 
       - type: history-graph
         title: Security states (24 h)
         hours_to_show: 24
         entities:
-          - entity: sensor.unifiblocker_new_devices
+          - entity: sensor.unifi_utopia_new_devices
             name: New
-          - entity: sensor.unifiblocker_suspicious_devices
+          - entity: sensor.unifi_utopia_suspicious_devices
             name: Suspicious
-          - entity: sensor.unifiblocker_blocked_devices
+          - entity: sensor.unifi_utopia_blocked_devices
             name: Blocked
-          - entity: sensor.unifiblocker_quarantined_devices
+          - entity: sensor.unifi_utopia_quarantined_devices
             name: Quarantined
 
   # ════════════════════════════════════════════════════════════════════
@@ -144,7 +144,7 @@ views:
     cards:
 
       - type: entity
-        entity: sensor.unifiblocker_suspicious_devices
+        entity: sensor.unifi_utopia_suspicious_devices
         name: Suspicious devices
         state_color: true
 
@@ -159,7 +159,7 @@ views:
       - type: markdown
         title: Flagged Devices
         content: >
-          {% set devs = state_attr('sensor.unifiblocker_suspicious_devices', 'devices') %}
+          {% set devs = state_attr('sensor.unifi_utopia_suspicious_devices', 'devices') %}
           {% if devs and devs | length > 0 %}
           {% for d in devs %}
           ### {{ loop.index }}. `{{ d.mac }}` — {{ d.name or 'No name' }} ({{ d.vendor or 'Unknown' }})
@@ -199,7 +199,7 @@ views:
       - type: markdown
         title: IDS/IPS Threat Events
         content: >
-          {% set evts = state_attr('sensor.unifiblocker_threat_events', 'events') %}
+          {% set evts = state_attr('sensor.unifi_utopia_threat_events', 'events') %}
           {% if evts and evts | length > 0 %}
           | Time | Category | Message | Source | Dest |
           |------|----------|---------|--------|------|
@@ -228,7 +228,7 @@ views:
       - type: markdown
         title: New Device Details
         content: >
-          {% set devs = state_attr('sensor.unifiblocker_new_devices', 'devices') %}
+          {% set devs = state_attr('sensor.unifi_utopia_new_devices', 'devices') %}
           {% if devs and devs | length > 0 %}
           {% for d in devs %}
           ### {{ loop.index }}. `{{ d.mac }}` {% if d.is_camera %} 📹 CAMERA{% endif %}
@@ -280,11 +280,11 @@ views:
           use automations.  Pass `mac: "aa:bb:cc:dd:ee:ff"`.
 
 
-          - `unifiblocker.trust_device` — safe, unblock if blocked
+          - `unifi_utopia.trust_device` — safe, unblock if blocked
 
-          - `unifiblocker.ignore_device` — hide from review queue
+          - `unifi_utopia.ignore_device` — hide from review queue
 
-          - `unifiblocker.quarantine_device` — block on the controller
+          - `unifi_utopia.quarantine_device` — block on the controller
 
   # ════════════════════════════════════════════════════════════════════
   #  VIEW 4 – All Connected Clients  (full detail table)
@@ -297,7 +297,7 @@ views:
       - type: markdown
         title: Connected Clients
         content: >
-          {% set clients = state_attr('sensor.unifiblocker_all_clients_detail', 'clients') %}
+          {% set clients = state_attr('sensor.unifi_utopia_all_clients_detail', 'clients') %}
           {% if clients and clients | length > 0 %}
           | MAC | Name | Vendor | IP | State | SSID | RSSI | Wired | Blocked | Cam | Threat |
           |-----|------|--------|----|-------|------|------|-------|---------|-----|--------|
@@ -317,13 +317,13 @@ views:
     cards:
 
       - type: entity
-        entity: sensor.unifiblocker_quarantined_devices
+        entity: sensor.unifi_utopia_quarantined_devices
         name: Quarantined devices
 
       - type: markdown
         title: Quarantined Device Details
         content: >
-          {% set devs = state_attr('sensor.unifiblocker_quarantined_devices', 'devices') %}
+          {% set devs = state_attr('sensor.unifi_utopia_quarantined_devices', 'devices') %}
           {% if devs and devs | length > 0 %}
           | MAC | Name | Vendor | IP | Blocked | Threat |
           |-----|------|--------|----|---------|--------|
@@ -338,8 +338,8 @@ views:
         title: Unblock a device
         content: >
           To release a quarantined device call
-          `unifiblocker.unblock_device` with `mac: "xx:xx:xx:xx:xx:xx"`
-          then `unifiblocker.trust_device` to move it out of quarantine.
+          `unifi_utopia.unblock_device` with `mac: "xx:xx:xx:xx:xx:xx"`
+          then `unifi_utopia.trust_device` to move it out of quarantine.
 
   # ════════════════════════════════════════════════════════════════════
   #  VIEW 6 – Connection & Access
@@ -350,18 +350,18 @@ views:
     cards:
 
       - type: entity
-        entity: binary_sensor.unifiblocker_controller_reachable
+        entity: binary_sensor.unifi_utopia_controller_reachable
         name: UCG Max Reachable
         state_color: true
 
       - type: entity
-        entity: sensor.unifiblocker_connection_health
+        entity: sensor.unifi_utopia_connection_health
         name: Connection Status
 
       - type: markdown
         title: Controller Details
         content: >
-          {% set h = states.sensor.unifiblocker_connection_health.attributes %}
+          {% set h = states.sensor.unifi_utopia_connection_health.attributes %}
           | Property | Value |
           |----------|-------|
           | Connection | {{ h.connection_ok if h.connection_ok is defined else '—' }} |
@@ -375,13 +375,13 @@ views:
       - type: markdown
         title: UCG Max Setup Guide
         content: >
-          ## How to connect UniFi Blocker to your UCG Max
+          ## How to connect UniFi Utopia to your UCG Max
 
 
           **1. Create a local-only admin account on the UCG Max**
 
 
-          UniFi Blocker connects directly to the controller's local
+          UniFi Utopia connects directly to the controller's local
           HTTPS API. Cloud-only (Ubiquiti SSO) accounts **will not
           work** — you must create a local admin:
 
@@ -408,7 +408,7 @@ views:
 
 
           In HA, go to **Settings → Devices & Services → Add Integration
-          → UniFi Blocker** and enter:
+          → UniFi Utopia** and enter:
 
           - **Host:** your UCG Max IP (e.g. `192.168.1.1`)
 
@@ -460,12 +460,12 @@ views:
 
           | Service | What it does |
           |---------|-------------|
-          | `unifiblocker.trust_device` | Mark trusted + unblock |
-          | `unifiblocker.ignore_device` | Hide from review queue |
-          | `unifiblocker.quarantine_device` | Mark quarantined + block |
-          | `unifiblocker.block_device` | Immediately block on controller |
-          | `unifiblocker.unblock_device` | Remove block on controller |
-          | `unifiblocker.reconnect_device` | Force reconnect (kick) |
+          | `unifi_utopia.trust_device` | Mark trusted + unblock |
+          | `unifi_utopia.ignore_device` | Hide from review queue |
+          | `unifi_utopia.quarantine_device` | Mark quarantined + block |
+          | `unifi_utopia.block_device` | Immediately block on controller |
+          | `unifi_utopia.unblock_device` | Remove block on controller |
+          | `unifi_utopia.reconnect_device` | Force reconnect (kick) |
 
 
           All services take a single field: `mac` (e.g. `"aa:bb:cc:dd:ee:ff"`)
@@ -481,11 +481,11 @@ views:
       - type: horizontal-stack
         cards:
           - type: entity
-            entity: sensor.unifiblocker_miner_profit_day
+            entity: sensor.unifi_utopia_miner_profit_day
             name: Profit / day
             icon: mdi:cash
           - type: entity
-            entity: sensor.unifiblocker_miner_profit_day
+            entity: sensor.unifi_utopia_miner_profit_day
             name: Rigs
             icon: mdi:server
             attribute: rig_count
@@ -493,12 +493,12 @@ views:
       - type: markdown
         title: Summary
         content: >
-          {% set m = state_attr('sensor.unifiblocker_miner_profit_day', 'rigs') %}
-          {% set rev = state_attr('sensor.unifiblocker_miner_profit_day', 'revenue_usd_day') or 0 %}
-          {% set cost = state_attr('sensor.unifiblocker_miner_profit_day', 'cost_usd_day') or 0 %}
-          {% set hr = state_attr('sensor.unifiblocker_miner_profit_day', 'total_hashrate_hs') or 0 %}
-          {% set pw = state_attr('sensor.unifiblocker_miner_profit_day', 'total_power_w') or 0 %}
-          {% set rate = state_attr('sensor.unifiblocker_miner_profit_day', 'electricity_usd_per_kwh') or 0.08 %}
+          {% set m = state_attr('sensor.unifi_utopia_miner_profit_day', 'rigs') %}
+          {% set rev = state_attr('sensor.unifi_utopia_miner_profit_day', 'revenue_usd_day') or 0 %}
+          {% set cost = state_attr('sensor.unifi_utopia_miner_profit_day', 'cost_usd_day') or 0 %}
+          {% set hr = state_attr('sensor.unifi_utopia_miner_profit_day', 'total_hashrate_hs') or 0 %}
+          {% set pw = state_attr('sensor.unifi_utopia_miner_profit_day', 'total_power_w') or 0 %}
+          {% set rate = state_attr('sensor.unifi_utopia_miner_profit_day', 'electricity_usd_per_kwh') or 0.08 %}
           | Metric | Value |
           |--------|-------|
           | Electricity cost | ${{ rate }} / kWh |
@@ -511,7 +511,7 @@ views:
       - type: markdown
         title: Discovered Rigs
         content: >
-          {% set rigs = state_attr('sensor.unifiblocker_miner_profit_day', 'rigs') %}
+          {% set rigs = state_attr('sensor.unifi_utopia_miner_profit_day', 'rigs') %}
           {% if rigs and rigs | length > 0 %}
           | IP | Model | API | Coin | Hashrate | Temp | Power | Rev/day | Cost/day | Profit/day |
           |----|-------|-----|------|----------|------|-------|---------|----------|------------|
@@ -596,5 +596,5 @@ views:
           If you see a camera hitting ports **34567, 34568, 6789, 9530,
           32100, or 19000** — it's phoning home to a cloud server
           (likely in China).  **Quarantine it** with
-          `unifiblocker.quarantine_device` and consider isolating all
+          `unifi_utopia.quarantine_device` and consider isolating all
           cameras to a dedicated VLAN with no WAN access.

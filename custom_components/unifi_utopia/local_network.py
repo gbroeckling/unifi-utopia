@@ -25,7 +25,7 @@ def _has_rule_for(descriptions: list[str], mac: str) -> bool:
     return any(d.startswith(prefix) for d in descriptions)
 
 
-STORAGE_KEY = "unifiblocker_localnet"
+STORAGE_KEY = "unifi_utopia_localnet"
 STORAGE_VERSION = 1
 
 # ── Subnet configuration ─────────────────────────────────────────────
@@ -33,8 +33,8 @@ STORAGE_VERSION = 1
 LOCAL_SUBNET = "192.168.2"
 LOCAL_CIDR = "192.168.2.0/24"
 
-# Firewall rule name managed by UniFi Blocker.
-FIREWALL_RULE_NAME = "UniFi Blocker - Block Local-Only from WAN"
+# Firewall rule name managed by UniFi Utopia.
+FIREWALL_RULE_NAME = "UniFi Utopia - Block Local-Only from WAN"
 
 # ── IP range assignments by category ─────────────────────────────────
 # Each tuple is (start, end) inclusive.

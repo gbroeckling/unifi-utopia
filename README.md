@@ -1,10 +1,10 @@
-# UniFi Blocker
+# UniFi Utopia
 
 **Network device security for Home Assistant — see everything, control everything.**
 
-UniFi Blocker is a Home Assistant custom integration that connects to your UniFi OS controller (UCG Max, UDM, UDM Pro, etc.) to give you complete visibility into every device on your network. It identifies, categorizes, and helps you isolate IoT devices — especially cheap IP cameras that phone home to cloud servers you don't control.
+UniFi Utopia is a Home Assistant custom integration that connects to your UniFi OS controller (UCG Max, UDM, UDM Pro, etc.) to give you complete visibility into every device on your network. It identifies, categorizes, and helps you isolate IoT devices — especially cheap IP cameras that phone home to cloud servers you don't control.
 
-If you have Hikvision, Dahua, XMEye, or other budget cameras on your network, those devices are almost certainly calling home to Chinese cloud servers, often through undocumented backdoor ports. UniFi Blocker finds them, tells you exactly what they are doing, and gives you the tools to shut it down — all from a sidebar panel inside Home Assistant.
+If you have Hikvision, Dahua, XMEye, or other budget cameras on your network, those devices are almost certainly calling home to Chinese cloud servers, often through undocumented backdoor ports. UniFi Utopia finds them, tells you exactly what they are doing, and gives you the tools to shut it down — all from a sidebar panel inside Home Assistant.
 
 ---
 
@@ -12,11 +12,11 @@ If you have Hikvision, Dahua, XMEye, or other budget cameras on your network, th
 
 | Sidebar Panel | Device Detail | Security Dashboard |
 |:---:|:---:|:---:|
-| ![Sidebar Panel](https://raw.githubusercontent.com/gbroeckling/unifiblocker/main/screenshots/panel-overview.png) | ![Device Detail](https://raw.githubusercontent.com/gbroeckling/unifiblocker/main/screenshots/device-detail.png) | ![Security Dashboard](https://raw.githubusercontent.com/gbroeckling/unifiblocker/main/screenshots/security-dashboard.png) |
+| ![Sidebar Panel](https://raw.githubusercontent.com/gbroeckling/unifi-utopia/main/screenshots/panel-overview.png) | ![Device Detail](https://raw.githubusercontent.com/gbroeckling/unifi-utopia/main/screenshots/device-detail.png) | ![Security Dashboard](https://raw.githubusercontent.com/gbroeckling/unifi-utopia/main/screenshots/security-dashboard.png) |
 
 | Port Scan Results | ONVIF Discovery | Suspicious Traffic |
 |:---:|:---:|:---:|
-| ![Port Scan](https://raw.githubusercontent.com/gbroeckling/unifiblocker/main/screenshots/port-scan.png) | ![ONVIF](https://raw.githubusercontent.com/gbroeckling/unifiblocker/main/screenshots/onvif-discovery.png) | ![Suspicious](https://raw.githubusercontent.com/gbroeckling/unifiblocker/main/screenshots/suspicious-traffic.png) |
+| ![Port Scan](https://raw.githubusercontent.com/gbroeckling/unifi-utopia/main/screenshots/port-scan.png) | ![ONVIF](https://raw.githubusercontent.com/gbroeckling/unifi-utopia/main/screenshots/onvif-discovery.png) | ![Suspicious](https://raw.githubusercontent.com/gbroeckling/unifi-utopia/main/screenshots/suspicious-traffic.png) |
 
 ---
 
@@ -42,7 +42,7 @@ Every device on your network is automatically classified into one of 16 categori
 Classification uses a 10-level priority system: manual override, ONVIF probe, port scan results, vendor OUI, chip vendor analysis, hostname patterns, vendor mapping, DPI traffic, learned patterns, and finally unknown.
 
 ### Learning Engine
-When you manually categorize a device, UniFi Blocker learns from it. It extracts the vendor string, hostname prefix, MAC prefix, and open port signature, then automatically applies those patterns to other uncategorized devices. Categorize one Hikvision camera and every other Hikvision on your network gets tagged automatically.
+When you manually categorize a device, UniFi Utopia learns from it. It extracts the vendor string, hostname prefix, MAC prefix, and open port signature, then automatically applies those patterns to other uncategorized devices. Categorize one Hikvision camera and every other Hikvision on your network gets tagged automatically.
 
 ### Port Scanner
 A targeted TCP connect scanner checks approximately 120 ports on each device, focused on the ports that actually matter for device identification and security. Not a general-purpose Nmap clone — this scanner knows what camera ports look like:
@@ -114,21 +114,21 @@ Generates prioritized, actionable security advice for every device based on vend
 ### HACS (Recommended)
 
 1. Open **HACS** in Home Assistant
-2. Search for **UniFi Blocker** and install it
+2. Search for **UniFi Utopia** and install it
 3. **Restart Home Assistant**
 
-If it doesn't show up in the search yet, add it as a custom repository first: HACS → three-dot menu → **Custom repositories** → `https://github.com/gbroeckling/unifiblocker`, category **Integration**.
+If it doesn't show up in the search yet, add it as a custom repository first: HACS → three-dot menu → **Custom repositories** → `https://github.com/gbroeckling/unifi-utopia`, category **Integration**.
 
 ### Manual
 
-Copy `custom_components/unifiblocker/` into your Home Assistant `config/custom_components/` directory and restart.
+Copy `custom_components/unifi_utopia/` into your Home Assistant `config/custom_components/` directory and restart.
 
 ---
 
 ## Setup
 
 1. Go to **Settings > Devices & Services > Add Integration**
-2. Search for **UniFi Blocker**
+2. Search for **UniFi Utopia**
 3. Enter your UniFi controller details:
    - **Host** — IP of your UCG Max / UDM (e.g., `192.168.1.1`)
    - **Username** — a local admin account on the controller
@@ -136,7 +136,7 @@ Copy `custom_components/unifiblocker/` into your Home Assistant `config/custom_c
    - **Site** — usually `default`
    - **Verify SSL** — leave off for self-signed certificates (typical)
    - **Scan interval** — polling frequency in seconds (default: 60)
-4. The integration tests the connection before saving. Once connected, the **UniFi Blocker** sidebar panel appears automatically.
+4. The integration tests the connection before saving. Once connected, the **UniFi Utopia** sidebar panel appears automatically.
 
 ---
 
@@ -178,7 +178,7 @@ Action Mode exists to prevent accidental changes. Browse freely in read-only mod
 
 ## Network Setup
 
-UniFi Blocker works best with a flat /22 network that uses IP-range-based firewall rules instead of VLANs. This gives you camera isolation with zero VLAN complexity.
+UniFi Utopia works best with a flat /22 network that uses IP-range-based firewall rules instead of VLANs. This gives you camera isolation with zero VLAN complexity.
 
 **See [NETWORK_GUIDE.md](NETWORK_GUIDE.md) for the complete step-by-step network setup guide**, including:
 - Why cheap cameras are dangerous
@@ -192,60 +192,60 @@ UniFi Blocker works best with a flat /22 network that uses IP-range-based firewa
 
 | Entity | Type | Description |
 |--------|------|-------------|
-| `sensor.unifiblocker_connected_clients` | Sensor | Total connected clients |
-| `sensor.unifiblocker_new_devices` | Sensor | Unreviewed device count |
-| `sensor.unifiblocker_blocked_devices` | Sensor | Currently blocked on controller |
-| `sensor.unifiblocker_quarantined_devices` | Sensor | Quarantined in local store |
-| `sensor.unifiblocker_trusted_devices` | Sensor | Trusted device count |
-| `sensor.unifiblocker_wireless_clients` | Sensor | Wi-Fi clients |
-| `sensor.unifiblocker_wired_clients` | Sensor | Wired clients |
-| `sensor.unifiblocker_all_clients_detail` | Sensor | Total count with full client detail in attributes |
-| `binary_sensor.unifiblocker_devices_pending_review` | Binary | ON when unreviewed devices exist |
+| `sensor.unifi_utopia_connected_clients` | Sensor | Total connected clients |
+| `sensor.unifi_utopia_new_devices` | Sensor | Unreviewed device count |
+| `sensor.unifi_utopia_blocked_devices` | Sensor | Currently blocked on controller |
+| `sensor.unifi_utopia_quarantined_devices` | Sensor | Quarantined in local store |
+| `sensor.unifi_utopia_trusted_devices` | Sensor | Trusted device count |
+| `sensor.unifi_utopia_wireless_clients` | Sensor | Wi-Fi clients |
+| `sensor.unifi_utopia_wired_clients` | Sensor | Wired clients |
+| `sensor.unifi_utopia_all_clients_detail` | Sensor | Total count with full client detail in attributes |
+| `binary_sensor.unifi_utopia_devices_pending_review` | Binary | ON when unreviewed devices exist |
 
 ## Services
 
 | Service | Description |
 |---------|-------------|
-| `unifiblocker.trust_device` | Mark as trusted; unblocks if blocked |
-| `unifiblocker.ignore_device` | Remove from review queue |
-| `unifiblocker.quarantine_device` | Mark quarantined and block on controller |
-| `unifiblocker.block_device` | Immediately block on controller |
-| `unifiblocker.unblock_device` | Remove block on controller |
-| `unifiblocker.reconnect_device` | Force client reconnect (kick) |
-| `unifiblocker.scan_device` | Port-scan one device and update its category |
-| `unifiblocker.run_quantify` | Deep-scan every device that's still unknown (takes a few minutes) |
-| `unifiblocker.onvif_discover` | Look for ONVIF cameras now (it also runs at startup and every 6 hours) |
+| `unifi_utopia.trust_device` | Mark as trusted; unblocks if blocked |
+| `unifi_utopia.ignore_device` | Remove from review queue |
+| `unifi_utopia.quarantine_device` | Mark quarantined and block on controller |
+| `unifi_utopia.block_device` | Immediately block on controller |
+| `unifi_utopia.unblock_device` | Remove block on controller |
+| `unifi_utopia.reconnect_device` | Force client reconnect (kick) |
+| `unifi_utopia.scan_device` | Port-scan one device and update its category |
+| `unifi_utopia.run_quantify` | Deep-scan every device that's still unknown (takes a few minutes) |
+| `unifi_utopia.onvif_discover` | Look for ONVIF cameras now (it also runs at startup and every 6 hours) |
 
 The device services take a single parameter, `mac` (e.g. `"aa:bb:cc:dd:ee:ff"`). `run_quantify` and `onvif_discover` take none.
 
 ### New devices and cameras
 
-Two options (Settings → Devices & services → UniFi Blocker → Configure) decide what happens when something shows up for the first time:
+Two options (Settings → Devices & services → UniFi Utopia → Configure) decide what happens when something shows up for the first time:
 
 - **When a new camera shows up**: `notify` (default) tells you. `block_internet` cuts a camera that's new to the network off from the internet straight away with a per-device traffic rule; its IP doesn't change, so it keeps working on your network, and trusting it removes the block (some cameras need the internet once to finish setting up in their app). Devices that were already on the network, and trusted or ignored ones, are never blocked automatically. `off` does nothing.
 - **When any other new device shows up**: `notify` (default) sends one notification listing them, `off` does nothing.
 
-Devices already on the network when you install or update don't count as new. Every new device also fires `unifiblocker_new_device` (`mac`, `ip`, `name`, `vendor`, `category`, `is_camera`).
+Devices already on the network when you install or update don't count as new. Every new device also fires `unifi_utopia_new_device` (`mac`, `ip`, `name`, `vendor`, `category`, `is_camera`).
 
 ### Containment failed event
 
-If a device on local-only (or quarantined, or blocked) shows traffic that UniFi let through, UniFi Blocker fires `unifiblocker_containment_failed` with `mac`, `ip`, `name`, `allowed` (how many connections) and `destinations`, at most once a day per device.
+If a device on local-only (or quarantined, or blocked) shows traffic that UniFi let through, UniFi Utopia fires `unifi_utopia_containment_failed` with `mac`, `ip`, `name`, `allowed` (how many connections) and `destinations`, at most once a day per device.
 
 ### New camera event
 
-When a device is seen as a camera for the first time, UniFi Blocker fires `unifiblocker_new_camera` with `mac`, `ip`, `name`, `vendor`, `manufacturer`, `model`, `confidence` and `category_source`. Cameras already on the network when you install or update don't fire it. Example: get a notification and scan it.
+When a device is seen as a camera for the first time, UniFi Utopia fires `unifi_utopia_new_camera` with `mac`, `ip`, `name`, `vendor`, `manufacturer`, `model`, `confidence` and `category_source`. Cameras already on the network when you install or update don't fire it. Example: get a notification and scan it.
 
 ```yaml
 automation:
   - alias: New camera on the network
     trigger:
       - platform: event
-        event_type: unifiblocker_new_camera
+        event_type: unifi_utopia_new_camera
     action:
       - service: notify.notify
         data:
           message: "New camera: {{ trigger.event.data.name or trigger.event.data.mac }} ({{ trigger.event.data.vendor }}) at {{ trigger.event.data.ip }}"
-      - service: unifiblocker.scan_device
+      - service: unifi_utopia.scan_device
         data:
           mac: "{{ trigger.event.data.mac }}"
 ```
@@ -290,24 +290,24 @@ UCG Max (UniFi OS)                Home Assistant
 
 ## Privacy and the opt-in usage report
 
-UniFi Blocker talks to your controller and to devices on your LAN. It makes two other outside requests, and neither sends anything about your network:
+UniFi Utopia talks to your controller and to devices on your LAN. It makes two other outside requests, and neither sends anything about your network:
 
 - Once a day it downloads CISA's public [Known Exploited Vulnerabilities](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) list from cisa.gov for the camera firmware check (a plain download; only the camera makers' entries are kept).
 - If you have miners, it fetches coin prices from minerstat.com.
 
 It sends nothing about you or your network anywhere unless you turn on the usage report.
 
-### Help improve UniFi Blocker (opt-in)
+### Help improve UniFi Utopia (opt-in)
 
-I test against one network. Bugs that only show up on other controllers, other firmware or bigger networks never get seen unless someone shares that they happened. So there's an **opt-in, off-by-default** report: the **Help improve UniFi Blocker** card at the bottom of the panel's Overview. **Preview** shows the exact JSON before you turn anything on.
+I test against one network. Bugs that only show up on other controllers, other firmware or bigger networks never get seen unless someone shares that they happened. So there's an **opt-in, off-by-default** report: the **Help improve UniFi Utopia** card at the bottom of the panel's Overview. **Preview** shows the exact JSON before you turn anything on.
 
-When it's on, UniFi Blocker POSTs a small JSON report (a few KB, hard cap 8 KB) to `unifiblocker.enerx.ca` at most once a day. This is the complete list of what's in it:
+When it's on, UniFi Utopia POSTs a small JSON report (a few KB, hard cap 8 KB) to `unifiblocker.enerx.ca` at most once a day. This is the complete list of what's in it:
 
 - `schema`, `version`, `ha_version`, `python`, the UTC `day`, and a random `install_id`
 - `env`: the controller's UniFi Network version (major.minor only), whether it's reachable, the poll interval, the auto-scan count, whether SSL is verified, and whether the local-only subnet is the default one (not the subnet itself)
 - `counts`: clients, wired clients, cameras, suspicious, new, trusted, quarantined, blocked and local-only devices, miners, scanned devices, manual categories and learned rules; clients per category (camera, iot, printer...); and devices matching each built-in vendor advisory (Hikvision, Dahua, XMEye/Xiongmai, EZVIZ, Imou, Reolink, Foscam)
 - `usage`: how many times each tool was used since the last report (Quantify, port scan, ONVIF, trust, quarantine, local-only and so on) and which panel views were opened, from a fixed list
-- `health`: polls, failed polls, average and slowest poll time; controller API errors as method, endpoint and status (for example `GET stat/event 404`, with any ids in the path replaced by `:id`); how many warnings and errors each UniFi Blocker module logged (module names only, never the message); and how often Home Assistant complained about our entities being slow to update or too big for the recorder
+- `health`: polls, failed polls, average and slowest poll time; controller API errors as method, endpoint and status (for example `GET stat/event 404`, with any ids in the path replaced by `:id`); how many warnings and errors each UniFi Utopia module logged (module names only, never the message); and how often Home Assistant complained about our entities being slow to update or too big for the recorder
 
 **Never**: MAC or IP addresses, hostnames, device names, vendor strings from your network, entity ids, your controller's address, site or login, or timestamps finer than the day. Before every send the integration walks every value and refuses the whole report if it finds a MAC, UUID, 32-hex, IP, email or entity-id shape, or any string over 64 characters. The server checks the same shapes again and doesn't store your IP address. Its code is in [`server/`](server/).
 

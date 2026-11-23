@@ -1,12 +1,12 @@
 name: Bug Report
-description: Report a bug in UniFi Blocker
+description: Report a bug in UniFi Utopia
 labels: ["bug"]
 body:
   - type: input
-    id: unifiblocker_version
+    id: unifi_utopia_version
     attributes:
-      label: UniFi Blocker version
-      description: "The version of UniFi Blocker you are running (e.g. 0.1.0)."
+      label: UniFi Utopia version
+      description: "The version of UniFi Utopia you are running (e.g. 0.1.0)."
       placeholder: "0.1.0"
     validations:
       required: true

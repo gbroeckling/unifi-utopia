@@ -8,7 +8,7 @@ new_camera_policy (options):
                     to the network (first seen < 2 days ago), never for
                     trusted or ignored devices. Opt-in: it changes the router.
     notify          default. A notification only
-    off             nothing (the unifiblocker_new_camera event still fires)
+    off             nothing (the unifi_utopia_new_camera event still fires)
 
 new_device_policy (options): notify (default) / off, for everything else.
 """
@@ -72,14 +72,14 @@ async def on_new_camera(hass: HomeAssistant, policy: str, api: Any, local_net: A
         if result.get("ok"):
             store.mark_auto_blocked(mac, result.get("rule_id", ""))
             _notify(hass, "New camera cut off from the internet",
-                    f"UniFi Blocker found a new camera, {what}, and blocked it from reaching the internet. "
+                    f"UniFi Utopia found a new camera, {what}, and blocked it from reaching the internet. "
                     "It still works on your local network.\n\nIf it's yours and needs its cloud app (some cameras "
-                    "need the internet once to finish setting up), **Trust** it in the UniFi Blocker panel to "
+                    "need the internet once to finish setting up), **Trust** it in the UniFi Utopia panel to "
                     "remove the block.", f"{DOMAIN}_cam_{mac}")
             return
         _LOGGER.warning("Couldn't block new camera %s: %s", mac, result.get("error"))
     _notify(hass, "New camera on your network",
-            f"UniFi Blocker found a new camera, {what}. Open the UniFi Blocker panel to put it on local-only "
+            f"UniFi Utopia found a new camera, {what}. Open the UniFi Utopia panel to put it on local-only "
             "or trust it.", f"{DOMAIN}_cam_{mac}")
 
 
@@ -92,7 +92,7 @@ def on_new_devices(hass: HomeAssistant, policy: str, devices: list[dict[str, Any
                       for d in devices[:15])
     more = f"\n- and {len(devices) - 15} more" if len(devices) > 15 else ""
     _notify(hass, f"{len(devices)} new device{'s' if len(devices) != 1 else ''} on your network",
-            f"{lines}{more}\n\nReview them in the UniFi Blocker panel.", f"{DOMAIN}_new_devices")
+            f"{lines}{more}\n\nReview them in the UniFi Utopia panel.", f"{DOMAIN}_new_devices")
 
 
 async def trust(entry: dict[str, Any], mac: str) -> None:
