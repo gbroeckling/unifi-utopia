@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.4.3 — 2026-11-25
+
+Fixes for 0.4.2.
+
+- **0.4.2 could leave UniFi Utopia broken after you changed its options, until Home Assistant was restarted.** Saving Configure (or reconfiguring or reloading the integration) left it "Failed to unload", and the old connection kept polling your controller in the background. This affected everyone on 0.4.2, with or without PadSpan. Fixed: it reloads cleanly again.
+- Wi-Fi coverage readings are saved every 15 minutes and when Home Assistant stops. 0.4.2 only saved them when Home Assistant shut down cleanly, so a crash or power cut lost the readings since it last started.
+- The raw log of each Wi-Fi reading is now an option, off by default: **Wi-Fi coverage: keep a raw log of each reading** under Configure. 0.4.2 wrote it without asking, to `unifi_utopia_wifi_survey/` in your config folder: a minute-by-minute record of where your tracked phones were. With the option off nothing more is written there, and what 0.4.2 wrote is removed once it is 7 days old (or delete the folder). With it on, files older than 7 days are removed each day.
+- Readings for spots, rooms and devices with nothing new for 30 days are dropped once a day, so the saved readings stop growing.
+- The coverage map is worked out once per poll instead of on every request, which takes load off Home Assistant with a month of readings.
+- A Wi-Fi coverage problem that keeps happening is logged once, not on every poll.
+- On screens of users who aren't administrators, the findings no longer carry device or network addresses in their ids.
+- Each access point is a device of its own. If you also use Home Assistant's UniFi Network integration, 0.4.2 merged the access point into that integration's device for it and overwrote its manufacturer, model and firmware. New access point devices no longer merge; one that 0.4.2 already merged stays merged.
+- The access point's **Online** sensor no longer has a `last_seen` attribute, which changed on every poll and filled the recorder.
+- An access point you replaced or took away can be deleted from its device page (Delete is offered once the controller no longer reports it).
+- The `unifiblocker/...` names of the Wi-Fi coverage commands are gone. Only PadSpan HA 0.38.283 and earlier used them, and Wi-Fi coverage needs 0.38.300 or later.
+
 ## 0.4.2 — 2026-11-25
 
 The Wi-Fi coverage survey for PadSpan HA.
