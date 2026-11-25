@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import sys
 import time
-from types import ModuleType, SimpleNamespace
+from types import SimpleNamespace
 
 import pytest
 
@@ -58,39 +58,18 @@ class Connection:
         self.errors.append((code, message))
 
 
-class PadSpan:
-    """PadSpan HA as loaded on the same Home Assistant: its data, and its licence module in sys.modules."""
-
-    def __init__(self, hass, monkeypatch) -> None:
-        self.allowed = False
-        self.asked: list[str] = []
-        hass.data["padspan_ha"] = {
-            "snapshot_cache": (time.monotonic(), {"objects": {"list": [{"key": "phone1", "user_label": "Phone one",
-                                                                         "age_s": 1.0}]}}),
-            "model": Model()}
-        mod = ModuleType(LICENCE)
-
-        def hass_addon_allowed(h, name):
-            self.asked.append(name)
-            return self.allowed and name == "wifi"
-
-        mod.hass_addon_allowed = hass_addon_allowed
-        self.module = mod
-        monkeypatch.setitem(sys.modules, LICENCE, mod)
-
-
 @pytest.fixture
-async def survey(hass):
+async def survey(hass, padspan):
+    # PadSpan's latest snapshot (one tracked phone) and its model (one placed receiver)
+    hass.data["padspan_ha"].update({
+        "snapshot_cache": (time.monotonic(), {"objects": {"list": [{"key": "phone1", "user_label": "Phone one",
+                                                                     "age_s": 1.0}]}}),
+        "model": Model()})
     s = ws.WifiSurvey(hass, Coordinator())
     await s.async_start()
     hass.data["unifi_utopia"] = {"entry1": {"wifi_survey": s}}
     ws.register(hass)
     return s
-
-
-@pytest.fixture
-def padspan(hass, monkeypatch):
-    return PadSpan(hass, monkeypatch)
 
 
 async def poll(hass, survey) -> None:
@@ -134,6 +113,9 @@ async def test_unlicensed_collects_nothing_and_answers_not_licensed(hass, survey
     assert conn.results == [] and conn.errors[0][0] == "not_licensed"
     assert survey.data["links"] == {} and survey.data["ap_pos"] == {}
 
+    await survey.async_stop()
+    assert survey.store.saved is None          # never collected: no file of its own in .storage
+
 
 async def test_licensed_collects_and_answers_as_before(hass, survey, padspan):
     padspan.allowed = True
@@ -156,6 +138,10 @@ async def test_licensed_collects_and_answers_as_before(hass, survey, padspan):
     conn = await ask(hass, "wifi_ap_set", mac=AP, floor="ground", x=1.0, y=1.5)
     assert conn.errors == [] and conn.results[0]["ok"] is True
     assert survey.data["ap_pos"][AP] == {"floor": "ground", "x": 1.0, "y": 1.5}
+
+    survey.store.saved = None
+    await survey.async_stop()
+    assert survey.store.saved["fixed"][RECEIVER_WIFI]["vals"]      # kept on stop, as before
 
 
 @pytest.mark.parametrize("case, reason", [

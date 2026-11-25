@@ -3,6 +3,10 @@
 So an access point can be placed in PadSpan HA's Mapping like any other device (its "Online" sensor
 carries wifi_access_point: true, which PadSpan's Atlas reads as a Wi-Fi access point), and so Home
 Assistant can say when one goes down. Read from the controller's device list; nothing is written to it.
+
+Part of Wi-Fi coverage (the owner, 0.4.2): only while PadSpan HA on this Home Assistant allows it
+(wifi_survey.not_licensed, asked on every poll). Never licensed, none is added. When the licence lapses, the
+ones already there stay and show unavailable (never removed); when it is back they work again.
 """
 from __future__ import annotations
 
@@ -18,6 +22,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
+from .wifi_survey import not_licensed
 
 
 def ap_identifier(mac: str) -> tuple[str, str]:
@@ -57,7 +62,7 @@ class _APEntity(CoordinatorEntity):
 
     @property
     def available(self) -> bool:
-        return super().available and self._ap is not None
+        return super().available and self._ap is not None and not_licensed(self.hass) is None
 
 
 class APOnlineBinarySensor(_APEntity, BinarySensorEntity):
@@ -105,11 +110,14 @@ class APClientsSensor(_APEntity, SensorEntity):
 
 def setup_ap_entities(hass: HomeAssistant, entry: ConfigEntry, coordinator, async_add_entities: AddEntitiesCallback,
                       make) -> None:
-    """Add one entity per access point now, and for each new one the controller reports later."""
+    """Add one entity per access point now, and for each new one the controller reports later, while PadSpan
+    allows Wi-Fi coverage (asked on every update, so they are added when a licence arrives)."""
     known: set[str] = set()
 
     @callback
     def _add_new() -> None:
+        if not_licensed(hass):
+            return
         new = [m for m in access_points(coordinator) if m not in known]
         if new:
             known.update(new)

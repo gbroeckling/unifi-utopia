@@ -108,11 +108,11 @@ With [PadSpan HA](https://github.com/gbroeckling/padspanHA) on the same Home Ass
 
 PadSpan draws this as a coverage map in its **Wi-Fi coverage** tab, one map per band, with what is worth fixing first: devices that drop off or hold on to a far access point, PadSpan receivers on weak Wi-Fi, rooms where phones spend time on weak Wi-Fi, an access point that is down, two of yours on one 2.4 GHz channel, a strong neighbouring network on your channels.
 
-**What it needs:** PadSpan HA 0.38.300 or later, with **PadSpan Pro** or PadSpan's **Wi-Fi coverage add-on** ([padspan.traks.ca](https://padspan.traks.ca)). UniFi Utopia asks PadSpan on every poll and every request, so a licence that is added or ends counts straight away. Without PadSpan or the licence, nothing is collected and the Wi-Fi tab doesn't appear; the rest of UniFi Utopia works the same either way. Readings collected before a licence ended are kept and show again when it is back.
+**What it needs:** PadSpan HA 0.38.300 or later, with **PadSpan Pro** or PadSpan's **Wi-Fi coverage add-on** ([padspan.traks.ca](https://padspan.traks.ca)). UniFi Utopia asks PadSpan on every poll and every request, so a licence that is added or ends counts straight away. Without PadSpan or the licence, nothing is collected, no access point devices are added and the Wi-Fi tab doesn't appear; the rest of UniFi Utopia works the same either way. If a licence ends, the readings are kept and the access point devices stay (unavailable); both are back when the licence is.
 
 **Where the data stays:** in Home Assistant only. Readings are kept for 30 days in `.storage/unifi_utopia.wifi_survey`, and a raw log goes to `unifi_utopia_wifi_survey/` in your config folder, one file a day (files older than 7 days are removed when Home Assistant starts). Nothing is written to your controller or to PadSpan.
 
-Each access point is also a Home Assistant device with **Online** and **Wi-Fi clients**, so it can be placed in PadSpan's Mapping like any other device (and Home Assistant can tell you when one goes down).
+With the licence, each access point is also a Home Assistant device with **Online** and **Wi-Fi clients**, so it can be placed in PadSpan's Mapping like any other device (and Home Assistant can tell you when one goes down).
 
 ### Additional Features
 - **Network Access Security dashboard** — overview of your network's security posture
@@ -216,8 +216,8 @@ UniFi Utopia works best with a flat /22 network that uses IP-range-based firewal
 | `sensor.unifi_utopia_wired_clients` | Sensor | Wired clients |
 | `sensor.unifi_utopia_all_clients_detail` | Sensor | Total count with full client detail in attributes |
 | `binary_sensor.unifi_utopia_devices_pending_review` | Binary | ON when unreviewed devices exist |
-| `binary_sensor.<access point>_online` | Binary | Per access point: ON while the controller has it connected |
-| `sensor.<access point>_wi_fi_clients` | Sensor | Per access point: its Wi-Fi clients, over all its radios |
+| `binary_sensor.<access point>_online` | Binary | Per access point, with Wi-Fi coverage ([see above](#wi-fi-coverage-survey-with-padspan-ha)): ON while the controller has it connected |
+| `sensor.<access point>_wi_fi_clients` | Sensor | Per access point, with Wi-Fi coverage: its Wi-Fi clients, over all its radios |
 
 ## Services
 

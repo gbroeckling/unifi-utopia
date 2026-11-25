@@ -211,7 +211,8 @@ class WifiSurvey:
         if self._unsub:
             self._unsub()
             self._unsub = None
-        await self.store.async_save(self.data)
+        if any(self.data.values()):      # never licensed, never collected: no file of its own
+            await self.store.async_save(self.data)
 
     @callback
     def _on_update(self) -> None:

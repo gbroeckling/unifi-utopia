@@ -74,8 +74,14 @@ class _Entity:
 
 
 class CoordinatorEntity(_Entity):
+    hass = None          # set by Home Assistant when the entity is added
+
     def __init__(self, coordinator) -> None:
         self.coordinator = coordinator
+
+    @property
+    def available(self) -> bool:
+        return getattr(self.coordinator, "last_update_success", True)
 
 
 _module("homeassistant")
@@ -99,6 +105,8 @@ _module("homeassistant.helpers.update_coordinator", CoordinatorEntity=Coordinato
 # The integration's package, bare: its submodules import from here as they would in Home Assistant.
 _module("custom_components").__path__ = [str(ROOT / "custom_components")]
 _module("custom_components.unifi_utopia").__path__ = [str(ROOT / "custom_components" / "unifi_utopia")]
+
+from custom_components.unifi_utopia.wifi_survey import PADSPAN_LICENCE_MODULE  # noqa: E402
 
 
 class FakeHass:
@@ -124,6 +132,30 @@ class FakeHass:
             await self.tasks.pop(0)
 
 
+class PadSpan:
+    """PadSpan HA as loaded on the same Home Assistant: its data, and its licence module in sys.modules,
+    whose hass_addon_allowed(hass, "wifi") says what `allowed` says."""
+
+    def __init__(self, hass: FakeHass, monkeypatch) -> None:
+        self.allowed = False
+        self.asked: list[str] = []
+        hass.data["padspan_ha"] = {}
+        mod = ModuleType(PADSPAN_LICENCE_MODULE)
+
+        def hass_addon_allowed(h, name):
+            self.asked.append(name)
+            return self.allowed and name == "wifi"
+
+        mod.hass_addon_allowed = hass_addon_allowed
+        self.module = mod
+        monkeypatch.setitem(sys.modules, PADSPAN_LICENCE_MODULE, mod)
+
+
 @pytest.fixture
 def hass(tmp_path: Path) -> FakeHass:
     return FakeHass(tmp_path)
+
+
+@pytest.fixture
+def padspan(hass: FakeHass, monkeypatch) -> PadSpan:
+    return PadSpan(hass, monkeypatch)

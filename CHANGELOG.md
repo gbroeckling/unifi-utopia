@@ -5,8 +5,8 @@
 The Wi-Fi coverage survey for PadSpan HA.
 
 - With [PadSpan HA](https://github.com/gbroeckling/padspanHA) on the same Home Assistant, UniFi Utopia measures how strongly your access points hear the house in everyday use: phones while they sit still for a minute, and the devices PadSpan has placed on its plans. PadSpan draws it as a coverage map in its Wi-Fi coverage tab, with what is worth fixing (a weak device, two access points on one 2.4 GHz channel, a strong neighbouring network, an access point that is down).
-- It works with PadSpan Pro or PadSpan's Wi-Fi coverage add-on, and needs PadSpan HA 0.38.300 or later. Without them nothing is collected, and the rest of UniFi Utopia works as before.
-- Each access point is a Home Assistant device with "Online" and "Wi-Fi clients", so it can be placed in PadSpan's Mapping like any other device.
+- With it, each access point is a Home Assistant device with "Online" and "Wi-Fi clients", so it can be placed in PadSpan's Mapping like any other device.
+- It works with PadSpan Pro or PadSpan's Wi-Fi coverage add-on, and needs PadSpan HA 0.38.300 or later. Without them nothing is collected and no new devices appear: the rest of UniFi Utopia works as before. If the licence ends, the access point devices stay, unavailable, and work again when it is back.
 - The readings stay in Home Assistant. Nothing is written to your controller or to PadSpan.
 
 ## 0.4.0 — 2026-11-23
