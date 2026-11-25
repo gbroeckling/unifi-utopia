@@ -229,3 +229,14 @@ async def test_replaced_access_point_device_can_be_deleted(hass, padspan, contro
     await minutes(hass, freezer, 1)
     assert hass.states.get("binary_sensor.hallway_ap_online").state == "unavailable"
     assert await async_remove_config_entry_device(hass, entry, device) is True
+
+
+async def test_readings_saved_when_home_assistant_stops(hass, padspan, hass_storage, freezer):
+    """Home Assistant stops without unloading integrations: what came in since the last save is written then."""
+    entry = await set_up(hass)
+    await minutes(hass, freezer, 6)
+    assert "unifi_utopia.wifi_survey" not in hass_storage
+    n = len(hass.data[DOMAIN][entry.entry_id]["wifi_survey"].data["fixed"][RECEIVER_WIFI]["vals"])
+    assert n >= 1
+    await hass.async_stop()
+    assert len(hass_storage["unifi_utopia.wifi_survey"]["data"]["fixed"][RECEIVER_WIFI]["vals"]) == n
