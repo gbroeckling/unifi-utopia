@@ -16,7 +16,6 @@ from homeassistant.components.binary_sensor import BinarySensorDeviceClass, Bina
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -47,9 +46,10 @@ class _APEntity(CoordinatorEntity):
         self._mac = mac
         self._attr_unique_id = f"{entry.entry_id}_ap_{mac.replace(':', '')}_{key}"
         d = access_points(coordinator).get(mac) or {}
+        # Identifiers only: the access point's MAC as a connection would merge this device with Home Assistant's
+        # own UniFi Network integration's device for it, and overwrite that one's manufacturer, model and firmware.
         self._attr_device_info = DeviceInfo(
             identifiers={ap_identifier(mac)},
-            connections={(dr.CONNECTION_NETWORK_MAC, mac)},
             name=str(d.get("name") or d.get("model") or mac),
             manufacturer="Ubiquiti",
             model=d.get("model"),
@@ -82,8 +82,9 @@ class APOnlineBinarySensor(_APEntity, BinarySensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         ap = self._ap or {}
-        # The marker PadSpan HA's Atlas reads: place this one in Mapping as a Wi-Fi access point.
-        return {"wifi_access_point": True, "last_seen": ap.get("last_seen"), "model": ap.get("model")}
+        # The marker PadSpan HA's Atlas reads: place this one in Mapping as a Wi-Fi access point. Nothing that
+        # changes on every poll (the controller's last_seen did), or the recorder keeps a new row each time.
+        return {"wifi_access_point": True, "model": ap.get("model")}
 
 
 class APClientsSensor(_APEntity, SensorEntity):

@@ -34,6 +34,7 @@ if str(ROOT / "custom_components") not in list(custom_components.__path__):
     custom_components.__path__.insert(0, str(ROOT / "custom_components"))
 
 from homeassistant.config_entries import ConfigEntryState  # noqa: E402
+from homeassistant.helpers import device_registry as dr  # noqa: E402
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed  # noqa: E402
 
 DOMAIN = "unifi_utopia"
@@ -192,3 +193,39 @@ async def test_licensed_survey_saves_while_running_and_raw_log_is_an_option(hass
     await hass.async_block_till_done()
     assert len(hass_storage["unifi_utopia.wifi_survey"]["data"]["fixed"][RECEIVER_WIFI]["vals"]) == n
     assert errors(caplog) == []
+
+
+async def test_access_point_device_is_its_own(hass, padspan):
+    """With Wi-Fi coverage each access point is a device of its own: never merged into Home Assistant's UniFi
+    Network integration's device for it (whose manufacturer, model and firmware 0.4.2 overwrote)."""
+    unifi = MockConfigEntry(domain="unifi", title="UniFi Network")
+    unifi.add_to_hass(hass)
+    reg = dr.async_get(hass)
+    theirs = reg.async_get_or_create(config_entry_id=unifi.entry_id, connections={(dr.CONNECTION_NETWORK_MAC, AP)},
+                                     identifiers={("unifi", AP)}, name="Hallway AP", manufacturer="Ubiquiti Networks",
+                                     model="U6 Pro", sw_version="6.6.77.15000")
+    entry = await set_up(hass)
+
+    theirs = reg.async_get(theirs.id)
+    assert theirs.config_entries == {unifi.entry_id} and theirs.identifiers == {("unifi", AP)}
+    assert (theirs.manufacturer, theirs.model, theirs.sw_version) == ("Ubiquiti Networks", "U6 Pro", "6.6.77.15000")
+    ours = reg.async_get_device(identifiers={(DOMAIN, f"ap:{AP}")})
+    assert ours is not None and ours.id != theirs.id and ours.connections == set()
+    online = hass.states.get("binary_sensor.hallway_ap_online")
+    assert online.state == "on" and "last_seen" not in online.attributes
+    assert online.attributes["wifi_access_point"] is True
+    assert entry.state is ConfigEntryState.LOADED
+
+
+async def test_replaced_access_point_device_can_be_deleted(hass, padspan, controller, freezer):
+    """Delete is offered for an access point the controller no longer reports, not for one it still does."""
+    from custom_components.unifi_utopia import async_remove_config_entry_device
+
+    entry = await set_up(hass)
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, f"ap:{AP}")})
+    assert await async_remove_config_entry_device(hass, entry, device) is False
+
+    controller["devices"] = [access_point("02:00:00:00:00:b2")]       # replaced by another one
+    await minutes(hass, freezer, 1)
+    assert hass.states.get("binary_sensor.hallway_ap_online").state == "unavailable"
+    assert await async_remove_config_entry_device(hass, entry, device) is True

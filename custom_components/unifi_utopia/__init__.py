@@ -258,6 +258,17 @@ async def _async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await hass.config_entries.async_reload(entry.entry_id)
 
 
+async def async_remove_config_entry_device(hass: HomeAssistant, entry: ConfigEntry, device) -> bool:
+    """An access point's device can be deleted once the controller no longer reports that access point
+    (one replaced or taken away); one it still reports would come back, so it stays."""
+    from .access_points import access_points  # noqa: PLC0415
+
+    macs = {i[1][3:] for i in device.identifiers if i[0] == DOMAIN and i[1].startswith("ap:")}
+    coordinator = (hass.data.get(DOMAIN, {}).get(entry.entry_id) or {}).get("coordinator")
+    current = access_points(coordinator) if coordinator is not None else {}
+    return bool(macs) and not macs & set(current)
+
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:

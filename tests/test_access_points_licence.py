@@ -81,6 +81,8 @@ def test_licensed_creates_them(hass, padspan):
     assert first.available and first.is_on is True and first.extra_state_attributes["wifi_access_point"] is True
     assert first._attr_unique_id == "entry1_ap_0200000000a1_online"
     assert first._attr_device_info["identifiers"] == {("unifi_utopia", f"ap:{AP1}")}
+    assert "connections" not in first._attr_device_info        # never merged with another integration's device
+    assert first.extra_state_attributes == {"wifi_access_point": True, "model": "U6"}   # nothing that changes each poll
     assert [e.native_value for e in clients.entities] == [3, 5] and all(e.available for e in clients.entities)
 
 
