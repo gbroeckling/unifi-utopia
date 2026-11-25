@@ -85,6 +85,7 @@ class CoordinatorEntity(_Entity):
 
 
 _module("homeassistant")
+_module("homeassistant.const", EVENT_HOMEASSISTANT_STOP="homeassistant_stop")
 _module("homeassistant.core", HomeAssistant=object, callback=_callback)
 _module("homeassistant.config_entries", ConfigEntry=object)
 _module("homeassistant.components")
@@ -109,13 +110,29 @@ _module("custom_components.unifi_utopia").__path__ = [str(ROOT / "custom_compone
 from custom_components.unifi_utopia.wifi_survey import PADSPAN_LICENCE_MODULE  # noqa: E402
 
 
+class Bus:
+    """Home Assistant's event bus, as far as async_listen_once goes; fire() runs what listens."""
+
+    def __init__(self) -> None:
+        self.once: dict[str, list] = {}
+
+    def async_listen_once(self, event_type, listener):
+        self.once.setdefault(event_type, []).append(listener)
+        return lambda: self.once[event_type].remove(listener)
+
+    async def fire(self, event_type) -> None:
+        for listener in self.once.pop(event_type, []):
+            await listener(SimpleNamespace(event_type=event_type))
+
+
 class FakeHass:
-    """What the survey asks of Home Assistant: its data, config folder, states and task scheduling."""
+    """What the survey asks of Home Assistant: its data, config folder, states, event bus and task scheduling."""
 
     def __init__(self, config_dir: Path) -> None:
         self.data: dict = {}
         self.config = SimpleNamespace(path=lambda *p: str(config_dir.joinpath(*p)))
         self.states = SimpleNamespace(get=lambda entity_id: None)
+        self.bus = Bus()
         self.tasks: list[asyncio.Task] = []
         self.ws_commands: dict = {}
 

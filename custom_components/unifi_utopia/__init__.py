@@ -147,7 +147,7 @@ async def _do_setup(hass: HomeAssistant, entry: ConfigEntry) -> None:
     # PadSpan HA draws it as a heatmap when this answers.
     try:
         from .wifi_survey import WifiSurvey, register as _register_wifi_survey
-        survey = WifiSurvey(hass, coordinator)
+        survey = WifiSurvey(hass, coordinator, raw_log=bool(data.get("wifi_raw_log", False)))
         await survey.async_start()
         hass.data[DOMAIN][entry.entry_id]["wifi_survey"] = survey
         # The coroutine function itself: Home Assistant runs it and waits for it while unloading.

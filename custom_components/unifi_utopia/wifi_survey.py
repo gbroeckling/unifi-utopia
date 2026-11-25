@@ -58,6 +58,7 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant.components import websocket_api
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -76,7 +77,9 @@ STILL_M = 1.5
 FRESH_POS_S = 45           # PadSpan must have heard the device this recently
 FRESH_WIFI_S = 150         # UniFi must have seen the client this recently
 FIXED_EVERY_S = 290        # fixed devices: one reading about every five minutes
-RAW_KEEP_DAYS = 7          # raw log files (for analysis) kept this many days
+SAVE_EVERY_S = 15 * 60     # the readings are saved this often (and when it stops)
+RAW_KEEP_DAYS = 7          # raw log files (an option, off by default) kept this many days
+HEATMAP_KEPT = 16          # answers kept until the next poll, one per filter asked for
 BANDS = {"ng": "2.4", "na": "5", "6e": "6"}
 PADSPAN = "padspan_ha"
 POS_KEYS = ("x_m", "y_m", "floor_id", "room", "_stale")   # what PadSpan's presence coordinator adds
@@ -178,10 +181,11 @@ def summarise(vals: list[list[float]]) -> dict[str, Any]:
 class WifiSurvey:
     """One per config entry. Fed by the coordinator; answers the websocket commands."""
 
-    def __init__(self, hass: HomeAssistant, coordinator) -> None:
+    def __init__(self, hass: HomeAssistant, coordinator, raw_log: bool = False) -> None:
         self.hass = hass
         self.coordinator = coordinator
         self.store = Store(hass, 1, STORE_KEY)
+        self.raw_log = raw_log                   # the option "keep a raw log of each reading"
         self.data: dict[str, Any] = {"links": {}, "excluded": [], "cells": {}, "rooms": {}, "fixed": {},
                                      "aps": {}, "ap_pos": {}, "phone_time": {}, "rounds": []}
         self._track: dict[str, deque] = {}       # wifi mac -> recent (t, x, y, floor, room)
@@ -194,6 +198,11 @@ class WifiSurvey:
         # after a restart the readings from before have no access point side.
         self._robot_ring: deque = deque(maxlen=ROBOT_RING_N)
         self._unsub = None
+        self._unsub_stop = None
+        self._last_save = 0.0
+        self._upkeep_day = ""
+        self._answers: dict[tuple, dict[str, Any]] = {}   # heatmap() per filter, until the next poll
+        self._faulty = False                     # the last poll failed (warned once, until one goes through)
         self.stats = {"polls": 0, "phone_kept": 0, "phone_carried": 0, "phone_moving": 0, "phone_stale": 0, "fixed_kept": 0,
                       "no_padspan": 0, "errors": 0, "last_error": "", "started": time.time()}
         self.raw_dir = hass.config.path("unifi_utopia_wifi_survey")
@@ -204,18 +213,33 @@ class WifiSurvey:
             for k in self.data:
                 if isinstance(stored.get(k), type(self.data[k])):
                     self.data[k] = stored[k]
+        self._last_save = time.time()
         self._unsub = self.coordinator.async_add_listener(self._on_update)
+        # Home Assistant stops without unloading the integration: saved then too.
+        self._unsub_stop = self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._on_ha_stop)
         await self.hass.async_add_executor_job(self._prune_raw)
 
     async def async_stop(self) -> None:
         if self._unsub:
             self._unsub()
             self._unsub = None
+        if self._unsub_stop:
+            self._unsub_stop()
+            self._unsub_stop = None
+        await self._save()
+
+    async def _on_ha_stop(self, _event) -> None:
+        self._unsub_stop = None          # it has fired: nothing left to remove
+        await self._save()
+
+    async def _save(self) -> None:
+        self._last_save = time.time()
         if any(self.data.values()):      # never licensed, never collected: no file of its own
             await self.store.async_save(self.data)
 
     @callback
     def _on_update(self) -> None:
+        self._answers.clear()            # a new poll: heatmap() works its answer out again
         if not_licensed(self.hass):      # PadSpan doesn't allow Wi-Fi coverage (now): nothing collected this poll
             return
         self.hass.async_create_task(self._collect(), "unifi_utopia wifi survey")
@@ -453,14 +477,38 @@ class WifiSurvey:
     async def _collect(self) -> None:
         try:
             await self._collect_inner()
+            self._faulty = False
         except Exception as err:  # noqa: BLE001 - counted and shown in the status; never breaks the poll
             self.stats["errors"] += 1
             self.stats["last_error"] = f"{type(err).__name__}: {err}"[:300]
-            _LOGGER.warning("Wi-Fi survey: a poll could not be used: %s", err, exc_info=self.stats["errors"] <= 3)
+            if self._faulty:      # still failing: in the log once is enough (the status counts every one)
+                _LOGGER.debug("Wi-Fi survey: a poll could not be used: %s", err)
+            else:
+                self._faulty = True
+                _LOGGER.warning("Wi-Fi survey: a poll could not be used: %s", err, exc_info=True)
+        finally:
+            self._answers.clear()
+
+    def _drop_stale(self, now: float) -> None:
+        """The cells and rooms, and the placed devices, whose newest reading is older than KEEP_S. _add trims only
+        the key it adds to, so one nothing adds to any more (a device moved, an access point replaced) would stay."""
+        cut = now - KEEP_S
+        for table in ("cells", "rooms"):
+            t = self.data.get(table) or {}
+            for k in [k for k, v in t.items() if not v or v[-1][0] < cut]:
+                del t[k]
+        fixed = self.data.get("fixed") or {}
+        for m in [m for m, f in fixed.items() if not f.get("vals") or f["vals"][-1][0] < cut]:
+            del fixed[m]
 
     async def _collect_inner(self) -> None:
         now = time.time()
         self.stats["polls"] += 1
+        day = time.strftime("%Y-%m-%d", time.localtime(now))
+        if day != self._upkeep_day:      # once a day (and on the first poll)
+            self._upkeep_day = day
+            self._drop_stale(now)
+            await self.hass.async_add_executor_job(self._prune_raw)
         wl = self._wireless()
         self._robot_sample(now, wl)
         objs, model = self._padspan()
@@ -554,8 +602,9 @@ class WifiSurvey:
         used = {str(c.get("ap_mac") or "").lower() for c in wl.values()}
         kept = {m: aps.get(m, n) for m, n in (self.data.get("aps") or {}).items()}
         self.data["aps"] = {**kept, **{m: n for m, n in aps.items() if m in used}}
-        self.store.async_delay_save(lambda: self.data, 300)
-        if raw:
+        if now - self._last_save >= SAVE_EVERY_S:
+            await self._save()
+        if raw and self.raw_log:
             await self.hass.async_add_executor_job(self._write_raw, raw)
 
     def _write_raw(self, rows: list[dict]) -> None:
@@ -712,6 +761,7 @@ class WifiSurvey:
             pos.pop(mac.lower(), None)                # back to the estimate
         else:
             pos[mac.lower()] = {"floor": floor, "x": round(float(x), 2), "y": round(float(y), 2)}
+        self._answers.clear()
         await self.store.async_save(self.data)
 
     def _ap_radios(self) -> list[dict]:
@@ -1108,7 +1158,19 @@ class WifiSurvey:
     # ── answers ───────────────────────────────────────────────────────────────
 
     def heatmap(self, floor: str | None = None, band: str | None = None, ap: str | None = None) -> dict[str, Any]:
-        """What PadSpan draws: cells and rooms per floor / band / access point, and the fixed devices."""
+        """What PadSpan draws: cells and rooms per floor / band / access point, and the fixed devices.
+
+        Worked out once per poll for each filter and kept until the next one (or a change made through the
+        commands): it runs in the event loop and takes a while with a month of readings. Not to be changed
+        by the caller: it is the same answer for the next request."""
+        key = (floor, band, ap)
+        if key not in self._answers:
+            if len(self._answers) >= HEATMAP_KEPT:
+                self._answers.clear()
+            self._answers[key] = self._build_heatmap(floor, band, ap)
+        return self._answers[key]
+
+    def _build_heatmap(self, floor: str | None, band: str | None, ap: str | None) -> dict[str, Any]:
         now = time.time()
         aps = dict(self.data.get("aps") or {})
         want_ap = (ap or "*").lower()
@@ -1189,6 +1251,7 @@ class WifiSurvey:
             links[mac] = {"ps": ps_id, "set": int(time.time())}
         self.data["excluded"] = sorted(excl)
         self._track.pop(mac, None)
+        self._answers.clear()
         await self.store.async_save(self.data)
 
 
@@ -1214,7 +1277,7 @@ def _heatmap(hass: HomeAssistant, connection, msg) -> None:
         return
     out = s.heatmap(msg.get("floor"), msg.get("band"), msg.get("ap"))
     if not connection.user.is_admin:
-        out.pop("status", None)
+        out = {k: v for k, v in out.items() if k != "status"}     # a copy: the kept answer stays whole
     connection.send_result(msg["id"], out)
 
 

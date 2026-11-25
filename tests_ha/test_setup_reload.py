@@ -13,9 +13,12 @@ with one access point and no clients.
 from __future__ import annotations
 
 import logging
+import os
 import sys
+import time
 from contextlib import ExitStack
 from pathlib import Path
+from types import ModuleType
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -31,10 +34,12 @@ if str(ROOT / "custom_components") not in list(custom_components.__path__):
     custom_components.__path__.insert(0, str(ROOT / "custom_components"))
 
 from homeassistant.config_entries import ConfigEntryState  # noqa: E402
-from pytest_homeassistant_custom_component.common import MockConfigEntry  # noqa: E402
+from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed  # noqa: E402
 
 DOMAIN = "unifi_utopia"
 AP = "02:00:00:00:00:a1"
+RECEIVER_BT = "02:00:00:00:00:12"     # a PadSpan receiver; its Wi-Fi address is its Bluetooth one minus 2
+RECEIVER_WIFI = "02:00:00:00:00:10"
 
 
 def access_point(mac: str = AP) -> dict:
@@ -58,7 +63,8 @@ def controller(hass, tmp_path):
 
     async def _update(self):
         from custom_components.unifi_utopia.coordinator import UniFiUtopiaData
-        return UniFiUtopiaData(clients=[dict(c) for c in state["clients"]], devices=[dict(d) for d in state["devices"]],
+        return UniFiUtopiaData(clients=[{**c, "last_seen": time.time()} for c in state["clients"]],
+                               devices=[dict(d) for d in state["devices"]],
                                store=self.store, suspicion={}, events=[], health={}, dpi={}, categories={})
 
     with ExitStack() as stack:
@@ -71,6 +77,40 @@ def controller(hass, tmp_path):
         ):
             stack.enter_context(patch(target, new) if new is not None else patch(target))
         yield state
+
+
+class Model:
+    """PadSpan's model: one receiver placed on its plan."""
+
+    def scanner_positions_m(self):
+        return {RECEIVER_BT: {"x_m": 2.0, "y_m": 3.0, "floor_id": "ground"}}
+
+    def light_positions_m(self):
+        return {}
+
+
+@pytest.fixture
+def padspan(hass, controller, monkeypatch):
+    """PadSpan HA on the same Home Assistant, allowing Wi-Fi coverage, with one tracked device and one placed
+    receiver that the controller has on Wi-Fi."""
+    mod = ModuleType("custom_components.padspan_ha.licence")
+    mod.hass_addon_allowed = lambda h, name: name == "wifi"
+    monkeypatch.setitem(sys.modules, mod.__name__, mod)
+    hass.data["padspan_ha"] = {
+        "snapshot_cache": (time.monotonic(), {"objects": {"list": [{"key": "phone1", "user_label": "Phone one",
+                                                                     "age_s": 1.0}]}}),
+        "model": Model()}
+    controller["clients"] = [{"mac": RECEIVER_WIFI, "name": "Receiver one", "signal": -61, "radio": "ng",
+                              "channel": 6, "ap_mac": AP}]
+    return mod
+
+
+async def minutes(hass, freezer, n: int) -> None:
+    """n minutes of Home Assistant's clock, a poll each (the default scan interval)."""
+    for _ in range(n):
+        freezer.tick(60)
+        async_fire_time_changed(hass)
+        await hass.async_block_till_done()
 
 
 async def set_up(hass) -> MockConfigEntry:
@@ -117,4 +157,38 @@ async def test_options_change_reloads_then_unloads(hass, controller, caplog):
     assert await hass.config_entries.async_setup(entry.entry_id)      # and it can be set up again
     await hass.async_block_till_done()
     assert entry.state is ConfigEntryState.LOADED
+    assert errors(caplog) == []
+
+
+async def test_licensed_survey_saves_while_running_and_raw_log_is_an_option(hass, padspan, hass_storage, freezer,
+                                                                          caplog):
+    """With Wi-Fi coverage: the readings reach .storage within 15 minutes of polls (0.4.2's save was put off
+    on every poll and only written when Home Assistant stopped), and the raw log is written only once the
+    option is on."""
+    entry = await set_up(hass)
+    survey = hass.data[DOMAIN][entry.entry_id]["wifi_survey"]
+    raw_dir = hass.config.path("unifi_utopia_wifi_survey")
+
+    await minutes(hass, freezer, 14)
+    assert survey.data["fixed"][RECEIVER_WIFI]["vals"]
+    assert "unifi_utopia.wifi_survey" not in hass_storage
+    await minutes(hass, freezer, 2)
+    saved = hass_storage["unifi_utopia.wifi_survey"]["data"]
+    assert saved["fixed"][RECEIVER_WIFI]["vals"] and survey.stats["errors"] == 0
+    assert not os.path.exists(raw_dir)                              # off by default
+
+    flow = await hass.config_entries.options.async_init(entry.entry_id)
+    flow = await hass.config_entries.options.async_configure(flow["flow_id"], {"wifi_raw_log": True})
+    assert flow["type"] == "create_entry"
+    await hass.async_block_till_done()
+    assert entry.state is ConfigEntryState.LOADED
+    survey = hass.data[DOMAIN][entry.entry_id]["wifi_survey"]
+    assert survey.raw_log is True
+    await minutes(hass, freezer, 5)                                 # the next round of placed devices
+    assert [f for f in os.listdir(raw_dir) if f.endswith(".jsonl")]
+
+    n = len(survey.data["fixed"][RECEIVER_WIFI]["vals"])
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert len(hass_storage["unifi_utopia.wifi_survey"]["data"]["fixed"][RECEIVER_WIFI]["vals"]) == n
     assert errors(caplog) == []

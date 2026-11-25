@@ -110,7 +110,9 @@ PadSpan draws this as a coverage map in its **Wi-Fi coverage** tab, one map per 
 
 **What it needs:** PadSpan HA 0.38.300 or later, with **PadSpan Pro** or PadSpan's **Wi-Fi coverage add-on** ([padspan.traks.ca](https://padspan.traks.ca)). UniFi Utopia asks PadSpan on every poll and every request, so a licence that is added or ends counts straight away. Without PadSpan or the licence, nothing is collected, no access point devices are added and the Wi-Fi tab doesn't appear; the rest of UniFi Utopia works the same either way. If a licence ends, the readings are kept and the access point devices stay (unavailable); both are back when the licence is.
 
-**Where the data stays:** in Home Assistant only. Readings are kept for 30 days in `.storage/unifi_utopia.wifi_survey`, and a raw log goes to `unifi_utopia_wifi_survey/` in your config folder, one file a day (files older than 7 days are removed when Home Assistant starts). Nothing is written to your controller or to PadSpan.
+**Where the data stays:** in Home Assistant only. Readings are kept for 30 days in `.storage/unifi_utopia.wifi_survey`, saved every 15 minutes and when Home Assistant stops. Nothing is written to your controller or to PadSpan.
+
+**Raw log (off by default):** the option **Wi-Fi coverage: keep a raw log of each reading** (Settings → Devices & services → UniFi Utopia → Configure) also writes every reading, with where PadSpan had the device at the time (its name, Wi-Fi address, room and spot), to `unifi_utopia_wifi_survey/` in your config folder, one file a day. That is a minute-by-minute record of where your phones were, so it is only for looking into the readings yourself; the coverage map doesn't need it. Files older than 7 days are removed each day while the survey runs, and when Home Assistant starts. Version 0.4.2 kept this log without asking: its files are removed the same way once they are 7 days old, or you can delete the folder.
 
 With the licence, each access point is also a Home Assistant device with **Online** and **Wi-Fi clients**, so it can be placed in PadSpan's Mapping like any other device (and Home Assistant can tell you when one goes down).
 

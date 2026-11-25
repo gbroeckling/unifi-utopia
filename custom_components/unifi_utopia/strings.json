@@ -45,11 +45,13 @@
           "local_cidr": "Local-only subnet (a /24, e.g. 192.168.2.0/24)",
           "auto_scan_count": "Devices to auto-scan per poll cycle",
           "new_camera_policy": "When a new camera shows up",
-          "new_device_policy": "When any other new device shows up"
+          "new_device_policy": "When any other new device shows up",
+          "wifi_raw_log": "Wi-Fi coverage: keep a raw log of each reading"
         },
         "data_description": {
           "new_camera_policy": "notify (default): just tell me. block_internet: cut a camera that is new to the network off from the internet right away (it keeps working on your network; trust it to undo). off: do nothing.",
-          "new_device_policy": "notify: one notification listing new devices. off: do nothing."
+          "new_device_policy": "notify: one notification listing new devices. off: do nothing.",
+          "wifi_raw_log": "Off by default. Only with Wi-Fi coverage (PadSpan HA with PadSpan Pro or its Wi-Fi coverage add-on). On: every reading is also written, with where PadSpan had the device (its name, Wi-Fi address, room and spot), to unifi_utopia_wifi_survey/ in your config folder, one file a day, kept 7 days. For looking into the readings yourself; the coverage map doesn't need it."
         }
       }
     },

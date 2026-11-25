@@ -176,6 +176,7 @@ class _OptionsFlow(config_entries.OptionsFlow):
                 vol.Optional(
                     "new_device_policy", default=cur.get("new_device_policy", DEFAULT_DEVICE_POLICY)
                 ): vol.In(DEVICE_POLICIES),
+                vol.Optional("wifi_raw_log", default=cur.get("wifi_raw_log", False)): bool,
             }),
             errors=errors,
         )
