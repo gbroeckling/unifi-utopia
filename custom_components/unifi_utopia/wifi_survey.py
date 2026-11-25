@@ -14,26 +14,24 @@ integration is absent the command doesn't exist and PadSpan shows nothing.
 
 Everything stays in Home Assistant. Nothing here writes to UniFi or to PadSpan.
 
-Test build (2026-11-22): PadSpan positions are read from its in-memory snapshot (no request, no
-cost); a documented PadSpan call replaces that if this goes further.
+PadSpan's positions are read from its in-memory snapshot (no request, no cost).
 
-The robot vacuum (2026-11-24, the owner's "Yes, build it"): PadSpan's room location runs stand the robot at
-spots about 1.5 m apart and keep the robot's own Wi-Fi at each (what the robot hears, from Valetudo). PadSpan
-hands them out through vacuum_run.robot_wifi_snapshot(hass), with the robot's IP. Here the robot is found
-among UniFi's clients by that IP each poll, and each of its readings is joined with what the access point
-heard from it nearest in time. The answer carries them apart from everything else ("robot"): the robot
-reads at about 0.1 m off the floor and almost certainly on 2.4 GHz only, and its own dBm and the access
-point's side are different scales, so neither is mixed into the cells, rooms, devices or findings.
+The robot vacuum: PadSpan's room location runs stand the robot at spots about 1.5 m apart and keep the robot's
+own Wi-Fi at each (what the robot hears, from Valetudo). PadSpan hands them out through
+vacuum_run.robot_wifi_snapshot(hass), with the robot's IP. Here the robot is found among UniFi's clients by that
+IP each poll, and each of its readings is joined with what the access point heard from it nearest in time. The
+answer carries them apart from everything else ("robot"): the robot reads at about 0.1 m off the floor and
+almost certainly on 2.4 GHz only, and its own dBm and the access point's side are different scales, so neither
+is mixed into the cells, rooms, devices or findings.
 
-Readings taken while the robot cleans (PadSpan from 2026-11-25, the owner's choice on its card, off by
-default): PadSpan marks each reading "kind" "stop" (a room location run's stand) or "moving" (on the move,
-about every 5 s), with a "weight" (1.0 a stop, 0.1 a moving one); a reading without them is a stop. Both are
-passed through as they are. A moving reading joins UniFi's side only with a sample within ROBOT_MOVING_JOIN_S
-of its own time: the robot drives on, and UniFi is polled about once a minute, so most have no access point
-side, and that is as it should be.
+Readings taken while the robot cleans (an option on PadSpan's card, off by default): PadSpan marks each reading
+"kind" "stop" (a room location run's stand) or "moving" (on the move, about every 5 s), with a "weight" (1.0 a
+stop, 0.1 a moving one); a reading without them is a stop. Both are passed through as they are. A moving reading
+joins UniFi's side only with a sample within ROBOT_MOVING_JOIN_S of its own time: the robot drives on, and UniFi
+is polled about once a minute, so most have no access point side, and that is as it should be.
 
-Unlocked by PadSpan's licence (0.4.2, the owner's decision): Wi-Fi coverage is PadSpan Pro's, or PadSpan's Wi-Fi
-coverage add-on's. The survey collects, and its commands answer with readings, only while PadSpan HA on this
+Unlocked by PadSpan's licence: Wi-Fi coverage is PadSpan Pro's, or PadSpan's Wi-Fi coverage add-on's. The survey
+collects, and its commands answer with readings, only while PadSpan HA on this
 Home Assistant says so (licence.hass_addon_allowed(hass, "wifi"), PadSpan HA 0.38.300 and later). PadSpan
 absent, an older one without the call, or the call failing: not licensed. Asked on every poll and every
 request (a read of PadSpan's settings in memory, nothing fetched), so a licence that arrives or lapses counts
@@ -43,6 +41,7 @@ version 1 or more as "the survey is there", so its Wi-Fi tab stays away. What wa
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import ipaddress
 import json
 import logging
@@ -203,6 +202,7 @@ class WifiSurvey:
         self._upkeep_day = ""
         self._answers: dict[tuple, dict[str, Any]] = {}   # heatmap() per filter, until the next poll
         self._faulty = False                     # the last poll failed (warned once, until one goes through)
+        self._id_key = os.urandom(16)            # for_household's finding ids
         self.stats = {"polls": 0, "phone_kept": 0, "phone_carried": 0, "phone_moving": 0, "phone_stale": 0, "fixed_kept": 0,
                       "no_padspan": 0, "errors": 0, "last_error": "", "started": time.time()}
         self.raw_dir = hass.config.path("unifi_utopia_wifi_survey")
@@ -1220,6 +1220,19 @@ class WifiSurvey:
             out["robot"] = rb
         return out
 
+    def for_household(self, answer: dict[str, Any]) -> dict[str, Any]:
+        """A heatmap answer as a non-administrator gets it: without the status, and with each finding's id
+        opaque. An id names what the finding is about, for some a device's or a neighbouring network's
+        address (airtime:<client MAC>, foreign:<BSSID>, ap_down:<access point MAC>). The opaque one keeps the
+        kind and stays the same for the same finding while this runs, so findings can still be told apart."""
+        out = {k: v for k, v in answer.items() if k != "status"}
+        out["findings"] = [{**f, "id": f"{f.get('kind')}:{self._opaque(str(f.get('id')))}"}
+                           for f in answer.get("findings") or []]
+        return out
+
+    def _opaque(self, s: str) -> str:
+        return hashlib.blake2s(s.encode(), key=self._id_key, digest_size=8).hexdigest()
+
     def status(self) -> dict[str, Any]:
         objs, model = self._padspan()
         wl = self._wireless() if self.coordinator.data else {}
@@ -1266,7 +1279,9 @@ def _survey(hass: HomeAssistant) -> WifiSurvey | None:
 
 
 def _heatmap(hass: HomeAssistant, connection, msg) -> None:
-    """Any signed-in user (PadSpan's map views are open to household screens): signal by place, no addresses."""
+    """Any signed-in user (PadSpan's map views are open to household screens): signal by place. Without the
+    status and with opaque finding ids for a non-administrator (for_household). Access points are still
+    named by their MAC (the ap filter is one), and a device UniFi has no name for shows as its MAC."""
     s = _survey(hass)
     if s is None:
         connection.send_error(msg["id"], "not_running", "The Wi-Fi survey is not running.")
@@ -1277,7 +1292,7 @@ def _heatmap(hass: HomeAssistant, connection, msg) -> None:
         return
     out = s.heatmap(msg.get("floor"), msg.get("band"), msg.get("ap"))
     if not connection.user.is_admin:
-        out = {k: v for k, v in out.items() if k != "status"}     # a copy: the kept answer stays whole
+        out = s.for_household(out)        # a copy: the kept answer stays whole
     connection.send_result(msg["id"], out)
 
 
@@ -1365,13 +1380,7 @@ def _commands(prefix: str) -> tuple:
     return (ws_wifi_heatmap, ws_wifi_links, ws_wifi_link_set, ws_wifi_ap_set)
 
 
-# PadSpan HA 0.38.283 and earlier ask under the integration's old name (UniFi Blocker); they are answered
-# under it too until PadSpan asks under unifi_utopia.
-LEGACY_PREFIX = "unifiblocker"
-
-
 def register(hass: HomeAssistant) -> None:
     from .const import DOMAIN  # noqa: PLC0415
-    for prefix in (DOMAIN, LEGACY_PREFIX):
-        for h in _commands(prefix):
-            websocket_api.async_register_command(hass, h)
+    for h in _commands(DOMAIN):
+        websocket_api.async_register_command(hass, h)

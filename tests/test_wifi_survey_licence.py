@@ -79,9 +79,9 @@ async def poll(hass, survey) -> None:
     await hass.async_block_till_done()
 
 
-async def ask(hass, kind: str, admin: bool = True, prefix: str = "unifi_utopia", **fields) -> Connection:
+async def ask(hass, kind: str, admin: bool = True, **fields) -> Connection:
     conn = Connection(admin)
-    out = hass.ws_commands[f"{prefix}/{kind}"](hass, conn, {"id": 1, "type": f"{prefix}/{kind}", **fields})
+    out = hass.ws_commands[f"unifi_utopia/{kind}"](hass, conn, {"id": 1, "type": f"unifi_utopia/{kind}", **fields})
     if out is not None:
         await out
     return conn
@@ -97,12 +97,14 @@ async def test_unlicensed_collects_nothing_and_answers_not_licensed(hass, survey
     assert padspan.asked == ["wifi"]
     assert survey.stats["polls"] == 0 and survey.data["fixed"] == {} and not hass.tasks
 
-    for prefix in ("unifi_utopia", "unifiblocker"):       # the old name's commands are gated the same way
-        conn = await ask(hass, "wifi_heatmap", prefix=prefix)
-        assert conn.errors == []
-        assert conn.results == [{"version": 0, "licensed": False, "reason": "not_allowed",
-                                 "message": "Wi-Fi coverage needs PadSpan Pro or PadSpan's Wi-Fi coverage add-on."}]
-        assert not heatmap_shown(conn.results[0])
+    conn = await ask(hass, "wifi_heatmap")
+    assert conn.errors == []
+    assert conn.results == [{"version": 0, "licensed": False, "reason": "not_allowed",
+                             "message": "Wi-Fi coverage needs PadSpan Pro or PadSpan's Wi-Fi coverage add-on."}]
+    assert not heatmap_shown(conn.results[0])
+    # Only under unifi_utopia: the old name's commands were for PadSpan 0.38.283 and earlier, never licensed.
+    assert sorted(hass.ws_commands) == ["unifi_utopia/wifi_ap_set", "unifi_utopia/wifi_heatmap",
+                                        "unifi_utopia/wifi_link_set", "unifi_utopia/wifi_links"]
 
     conn = await ask(hass, "wifi_links")
     assert conn.errors == [] and conn.results[0]["licensed"] is False and "wifi" not in conn.results[0]
@@ -209,3 +211,26 @@ async def test_licence_flips_at_runtime(hass, survey, padspan, monkeypatch):
     await poll(hass, survey)
     assert readings() == 2
     assert survey.stats["polls"] == 2
+
+
+async def test_household_finding_ids_carry_no_addresses(hass, survey, padspan):
+    """A non-administrator's findings: the same, but each id opaque (some name a device's or network's MAC)."""
+    padspan.allowed = True
+    survey.coordinator.data.devices[0].update({"state": 0, "last_seen": time.time() - 3600})   # down an hour
+    survey.coordinator.data.clients[0].update({"signal": -85, "wifi_tx_attempts": 200000, "tx_retries": 90000,
+                                               "tx_rate": 6000, "rx_rate": 6000})              # weak and slow
+    await poll(hass, survey)
+    admin = (await ask(hass, "wifi_heatmap")).results[0]
+    ids = {f["kind"]: f["id"] for f in admin["findings"]}
+    assert ids["ap_down"] == f"ap_down:{AP}" and ids["airtime"] == f"airtime:{RECEIVER_WIFI}"
+
+    guest = (await ask(hass, "wifi_heatmap", admin=False)).results[0]
+    gids = {f["kind"]: f["id"] for f in guest["findings"]}
+    assert set(gids) == set(ids) and all(i.startswith(k + ":") for k, i in gids.items())
+    assert not any(m in i or m.replace(":", "") in i for i in gids.values() for m in (AP, RECEIVER_WIFI))
+    assert len(set(gids.values())) == len(gids)
+    again = (await ask(hass, "wifi_heatmap", admin=False)).results[0]
+    assert [f["id"] for f in again["findings"]] == [f["id"] for f in guest["findings"]]    # stable
+    no_id = [{k: v for k, v in f.items() if k != "id"} for f in admin["findings"]]
+    assert [{k: v for k, v in f.items() if k != "id"} for f in guest["findings"]] == no_id
+    assert (await ask(hass, "wifi_heatmap")).results[0]["findings"][0]["id"] in ids.values()   # admin's whole

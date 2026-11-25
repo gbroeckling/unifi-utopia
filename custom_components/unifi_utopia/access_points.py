@@ -4,7 +4,7 @@ So an access point can be placed in PadSpan HA's Mapping like any other device (
 carries wifi_access_point: true, which PadSpan's Atlas reads as a Wi-Fi access point), and so Home
 Assistant can say when one goes down. Read from the controller's device list; nothing is written to it.
 
-Part of Wi-Fi coverage (the owner, 0.4.2): only while PadSpan HA on this Home Assistant allows it
+Part of Wi-Fi coverage: only while PadSpan HA on this Home Assistant allows it
 (wifi_survey.not_licensed, asked on every poll). Never licensed, none is added. When the licence lapses, the
 ones already there stay and show unavailable (never removed); when it is back they work again.
 """
