@@ -150,7 +150,8 @@ async def _do_setup(hass: HomeAssistant, entry: ConfigEntry) -> None:
         survey = WifiSurvey(hass, coordinator)
         await survey.async_start()
         hass.data[DOMAIN][entry.entry_id]["wifi_survey"] = survey
-        entry.async_on_unload(lambda: hass.async_create_task(survey.async_stop()))
+        # The coroutine function itself: Home Assistant runs it and waits for it while unloading.
+        entry.async_on_unload(survey.async_stop)
         _register_wifi_survey(hass)
     except Exception:
         _LOGGER.warning("Wi-Fi survey failed to start", exc_info=True)
