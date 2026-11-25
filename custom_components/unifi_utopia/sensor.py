@@ -37,6 +37,9 @@ async def async_setup_entry(
             MinerProfitabilitySensor(coordinator, entry),
         ]
     )
+    # Each access point as a device of its own (access_points.py): its Wi-Fi clients.
+    from .access_points import APClientsSensor, setup_ap_entities  # noqa: PLC0415
+    setup_ap_entities(hass, entry, coordinator, async_add_entities, APClientsSensor)
 
 
 class _BaseSensor(CoordinatorEntity[UniFiUtopiaCoordinator], SensorEntity):

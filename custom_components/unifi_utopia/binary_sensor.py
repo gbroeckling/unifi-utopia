@@ -26,6 +26,9 @@ async def async_setup_entry(
         SuspiciousTrafficBinarySensor(coordinator, entry),
         ControllerReachableBinarySensor(coordinator, entry),
     ])
+    # Each access point as a device of its own (access_points.py): online, and placeable in PadSpan's Mapping.
+    from .access_points import APOnlineBinarySensor, setup_ap_entities  # noqa: PLC0415
+    setup_ap_entities(hass, entry, coordinator, async_add_entities, APOnlineBinarySensor)
 
 
 class NewDevicesPendingBinarySensor(

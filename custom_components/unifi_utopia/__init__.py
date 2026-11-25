@@ -143,6 +143,18 @@ async def _do_setup(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
+    # Wi-Fi coverage survey (wifi_survey.py): reads UniFi and PadSpan HA, writes neither;
+    # PadSpan HA draws it as a heatmap when this answers.
+    try:
+        from .wifi_survey import WifiSurvey, register as _register_wifi_survey
+        survey = WifiSurvey(hass, coordinator)
+        await survey.async_start()
+        hass.data[DOMAIN][entry.entry_id]["wifi_survey"] = survey
+        entry.async_on_unload(lambda: hass.async_create_task(survey.async_stop()))
+        _register_wifi_survey(hass)
+    except Exception:
+        _LOGGER.warning("Wi-Fi survey failed to start", exc_info=True)
+
     # Options and reconfigure both land here.
     entry.async_on_unload(entry.add_update_listener(_async_reload_entry))
 
