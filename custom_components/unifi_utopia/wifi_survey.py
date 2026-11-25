@@ -31,6 +31,14 @@ about every 5 s), with a "weight" (1.0 a stop, 0.1 a moving one); a reading with
 passed through as they are. A moving reading joins UniFi's side only with a sample within ROBOT_MOVING_JOIN_S
 of its own time: the robot drives on, and UniFi is polled about once a minute, so most have no access point
 side, and that is as it should be.
+
+Unlocked by PadSpan's licence (0.4.2, the owner's decision): Wi-Fi coverage is PadSpan Pro's, or PadSpan's Wi-Fi
+coverage add-on's. The survey collects, and its commands answer with readings, only while PadSpan HA on this
+Home Assistant says so (licence.hass_addon_allowed(hass, "wifi"), PadSpan HA 0.38.300 and later). PadSpan
+absent, an older one without the call, or the call failing: not licensed. Asked on every poll and every
+request (a read of PadSpan's settings in memory, nothing fetched), so a licence that arrives or lapses counts
+from the next one. Not licensed, wifi_heatmap answers {"version": 0, "licensed": false, ...}: PadSpan reads
+version 1 or more as "the survey is there", so its Wi-Fi tab stays away. What was collected stays stored.
 """
 from __future__ import annotations
 
@@ -109,6 +117,36 @@ ROBOT_STOP_SLACK_S = 3     # a sample this close outside the stop's own start/en
 ROBOT_MOVING_JOIN_S = 5    # a reading taken on the move: the access point's sample this close in time, or none
 ROBOT_RING_N = 1440        # the robot's access point samples kept in memory: a day at the 60 s poll
 ROBOT_FREQ = {"2.4ghz": "2.4", "5ghz": "5"}   # Valetudo's frequency as a band
+# PadSpan's licence: Wi-Fi coverage is its add-on "wifi" (PadSpan Pro includes it)
+PADSPAN_LICENCE_MODULE = "custom_components.padspan_ha.licence"   # hass_addon_allowed(hass, name), 0.38.300+
+PADSPAN_ADDON = "wifi"
+NOT_LICENSED_WORDS = {
+    "padspan_missing": "Wi-Fi coverage is shown in PadSpan HA, which is not running on this Home Assistant.",
+    "padspan_too_old": "Wi-Fi coverage needs PadSpan HA 0.38.300 or later.",
+    "not_allowed": "Wi-Fi coverage needs PadSpan Pro or PadSpan's Wi-Fi coverage add-on.",
+    "check_failed": "PadSpan HA could not say whether Wi-Fi coverage is allowed.",
+}
+
+
+def not_licensed(hass: HomeAssistant) -> str | None:
+    """None while PadSpan HA on this Home Assistant allows Wi-Fi coverage, else why not (NOT_LICENSED_WORDS).
+    Asked only of a PadSpan that is loaded (its licence module is imported with it); never imported here."""
+    if PADSPAN not in hass.data:
+        return "padspan_missing"
+    fn = getattr(sys.modules.get(PADSPAN_LICENCE_MODULE), "hass_addon_allowed", None)
+    if not callable(fn):
+        return "padspan_too_old"
+    try:
+        ok = fn(hass, PADSPAN_ADDON)
+    except Exception:  # noqa: BLE001 - PadSpan's trouble: not licensed this time, asked again next time
+        _LOGGER.debug("Wi-Fi survey: PadSpan's licence not readable", exc_info=True)
+        return "check_failed"
+    return None if ok is True else "not_allowed"
+
+
+def not_licensed_answer(reason: str) -> dict[str, Any]:
+    """What the commands answer while not licensed: no readings, and why."""
+    return {"version": 0, "licensed": False, "reason": reason, "message": NOT_LICENSED_WORDS[reason]}
 
 
 def norm_name(s: Any) -> str:
@@ -177,6 +215,8 @@ class WifiSurvey:
 
     @callback
     def _on_update(self) -> None:
+        if not_licensed(self.hass):      # PadSpan doesn't allow Wi-Fi coverage (now): nothing collected this poll
+            return
         self.hass.async_create_task(self._collect(), "unifi_utopia wifi survey")
 
     # ── inputs ────────────────────────────────────────────────────────────────
@@ -1167,6 +1207,10 @@ def _heatmap(hass: HomeAssistant, connection, msg) -> None:
     if s is None:
         connection.send_error(msg["id"], "not_running", "The Wi-Fi survey is not running.")
         return
+    why = not_licensed(hass)
+    if why:
+        connection.send_result(msg["id"], not_licensed_answer(why))
+        return
     out = s.heatmap(msg.get("floor"), msg.get("band"), msg.get("ap"))
     if not connection.user.is_admin:
         out.pop("status", None)
@@ -1178,6 +1222,10 @@ def _links(hass: HomeAssistant, connection, msg) -> None:
     if s is None:
         connection.send_error(msg["id"], "not_running", "The Wi-Fi survey is not running.")
         return
+    why = not_licensed(hass)
+    if why:
+        connection.send_result(msg["id"], not_licensed_answer(why))
+        return
     connection.send_result(msg["id"], {**s.link_candidates(), "status": s.status()})
 
 
@@ -1185,6 +1233,10 @@ async def _link_set(hass: HomeAssistant, connection, msg) -> None:
     s = _survey(hass)
     if s is None:
         connection.send_error(msg["id"], "not_running", "The Wi-Fi survey is not running.")
+        return
+    why = not_licensed(hass)
+    if why:
+        connection.send_error(msg["id"], "not_licensed", NOT_LICENSED_WORDS[why])
         return
     await s.set_link(msg["mac"], msg.get("padspan_id"), msg.get("exclude", False))
     connection.send_result(msg["id"], {"ok": True, **s.link_candidates()})
@@ -1195,6 +1247,10 @@ async def _ap_set(hass: HomeAssistant, connection, msg) -> None:
     s = _survey(hass)
     if s is None:
         connection.send_error(msg["id"], "not_running", "The Wi-Fi survey is not running.")
+        return
+    why = not_licensed(hass)
+    if why:
+        connection.send_error(msg["id"], "not_licensed", NOT_LICENSED_WORDS[why])
         return
     await s.set_ap_position(msg["mac"], msg.get("floor"), msg.get("x"), msg.get("y"))
     connection.send_result(msg["id"], {"ok": True, "aps": s.ap_positions()})
