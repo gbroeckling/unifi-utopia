@@ -141,6 +141,8 @@ async def _do_setup(hass: HomeAssistant, entry: ConfigEntry) -> None:
         "learned": learned, "report": report,
     }
 
+    from .access_points import drop_old_connections
+    drop_old_connections(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     # Wi-Fi coverage survey (wifi_survey.py): reads UniFi and PadSpan HA, writes neither;

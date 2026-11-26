@@ -217,6 +217,28 @@ async def test_access_point_device_is_its_own(hass, padspan):
     assert entry.state is ConfigEntryState.LOADED
 
 
+async def test_access_point_device_from_042_loses_its_mac_connection(hass, padspan):
+    """0.4.2 gave its access point devices the MAC as a connection: taken off at setup, so the UniFi Network
+    integration, added later, gets a device of its own instead of merging into this one."""
+    entry = MockConfigEntry(domain=DOMAIN, title="UniFi Utopia (192.0.2.1)",
+                            data={"host": "192.0.2.1", "username": "u", "password": "p"})
+    entry.add_to_hass(hass)
+    reg = dr.async_get(hass)
+    old = reg.async_get_or_create(config_entry_id=entry.entry_id, connections={(dr.CONNECTION_NETWORK_MAC, AP)},
+                                  identifiers={(DOMAIN, f"ap:{AP}")}, name="Hallway AP", manufacturer="Ubiquiti")
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    mine = reg.async_get(old.id)
+    assert mine.connections == set() and mine.identifiers == {(DOMAIN, f"ap:{AP}")}   # the same device, kept
+    assert hass.states.get("binary_sensor.hallway_ap_online").state == "on"
+
+    unifi = MockConfigEntry(domain="unifi", title="UniFi Network")
+    unifi.add_to_hass(hass)
+    theirs = reg.async_get_or_create(config_entry_id=unifi.entry_id, connections={(dr.CONNECTION_NETWORK_MAC, AP)},
+                                     identifiers={("unifi", AP)}, manufacturer="Ubiquiti Networks", model="U6 Pro")
+    assert theirs.id != mine.id and reg.async_get(mine.id).config_entries == {entry.entry_id}
+
+
 async def test_replaced_access_point_device_can_be_deleted(hass, padspan, controller, freezer):
     """Delete is offered for an access point the controller no longer reports, not for one it still does."""
     from custom_components.unifi_utopia import async_remove_config_entry_device

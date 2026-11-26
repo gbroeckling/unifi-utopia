@@ -11,7 +11,7 @@ Fixes for 0.4.2.
 - The coverage map is worked out once per poll instead of on every request, which takes load off Home Assistant with a month of readings.
 - A Wi-Fi coverage problem that keeps happening is logged once, not on every poll.
 - On screens of users who aren't administrators, the findings no longer carry device or network addresses in their ids.
-- Each access point is a device of its own. If you also use Home Assistant's UniFi Network integration, 0.4.2 merged the access point into that integration's device for it and overwrote its manufacturer, model and firmware. New access point devices no longer merge; one that 0.4.2 already merged stays merged.
+- Each access point is a device of its own. If you also use Home Assistant's UniFi Network integration, 0.4.2 merged the access point into that integration's device for it and overwrote its manufacturer, model and firmware. That no longer happens, also not to an access point device 0.4.2 made if you add UniFi Network later; one that 0.4.2 already merged stays merged.
 - The access point's **Online** sensor no longer has a `last_seen` attribute, which changed on every poll and filled the recorder.
 - An access point you replaced or took away can be deleted from its device page (Delete is offered once the controller no longer reports it).
 - The `unifiblocker/...` names of the Wi-Fi coverage commands are gone. Only PadSpan HA 0.38.283 and earlier used them, and Wi-Fi coverage needs 0.38.300 or later.

@@ -16,6 +16,7 @@ from homeassistant.components.binary_sensor import BinarySensorDeviceClass, Bina
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -36,6 +37,17 @@ def access_points(coordinator) -> dict[str, dict[str, Any]]:
         if isinstance(d, dict) and d.get("radio_table") and d.get("mac"):
             out[str(d["mac"]).lower()] = d
     return out
+
+
+def drop_old_connections(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """0.4.2 gave each access point's device its MAC as a connection, so Home Assistant's UniFi Network
+    integration, added later, would merge its device into it. Taken off the devices only this integration has
+    (nothing else about them changes); one 0.4.2 already merged with another integration's device stays as it is."""
+    reg = dr.async_get(hass)
+    for dev in dr.async_entries_for_config_entry(reg, entry.entry_id):
+        if (dev.connections and set(dev.config_entries) == {entry.entry_id}
+                and any(i[0] == DOMAIN and i[1].startswith("ap:") for i in dev.identifiers)):
+            reg.async_update_device(dev.id, new_connections=set())
 
 
 class _APEntity(CoordinatorEntity):
