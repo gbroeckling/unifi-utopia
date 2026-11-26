@@ -262,3 +262,40 @@ async def test_readings_saved_when_home_assistant_stops(hass, padspan, hass_stor
     assert n >= 1
     await hass.async_stop()
     assert len(hass_storage["unifi_utopia.wifi_survey"]["data"]["fixed"][RECEIVER_WIFI]["vals"]) == n
+
+
+async def test_delete_not_offered_while_not_loaded(hass, padspan, controller):
+    """Not loaded, or set up without hearing from the controller: nobody can say whether the access point is
+    still there, so Delete isn't offered (Home Assistant would remove the device and entities for good)."""
+    from custom_components.unifi_utopia import async_remove_config_entry_device
+
+    entry = await set_up(hass)
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, f"ap:{AP}")})
+    controller["devices"] = []                                         # gone from the controller, but...
+    assert await hass.config_entries.async_unload(entry.entry_id)     # ... not loaded
+    await hass.async_block_till_done()
+    assert await async_remove_config_entry_device(hass, entry, device) is False
+
+    with patch("custom_components.unifi_utopia.unifi_api.UniFiApi.login", AsyncMock(side_effect=OSError("down"))):
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+    assert entry.state is not ConfigEntryState.LOADED
+    assert await async_remove_config_entry_device(hass, entry, device) is False
+
+
+async def test_raw_log_folder_trouble_does_not_stop_the_survey(hass, padspan, freezer, caplog):
+    """A folder named like a log file in the raw log's folder: the survey still starts, collects, and unloads."""
+    raw_dir = hass.config.path("unifi_utopia_wifi_survey")
+    folder, old = os.path.join(raw_dir, "2026-01-01.jsonl"), os.path.join(raw_dir, "2026-01-02.jsonl")
+    os.makedirs(folder)
+    open(old, "w").close()
+    for p in (folder, old):                        # both past the 7 days
+        os.utime(p, (time.time() - 8 * 86400, time.time() - 8 * 86400))
+    entry = await set_up(hass)
+    survey = hass.data[DOMAIN][entry.entry_id]["wifi_survey"]
+    assert not os.path.exists(old) and os.path.isdir(folder)
+    await minutes(hass, freezer, 1)
+    assert survey.data["fixed"][RECEIVER_WIFI]["vals"] and survey.stats["errors"] == 0
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert survey._unsub is None and survey._unsub_stop is None and errors(caplog) == []

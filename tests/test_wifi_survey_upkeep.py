@@ -21,12 +21,15 @@ DAY = 86400
 
 
 class Clock:
-    """The time module as the survey sees it: time() moves only when the test moves it."""
+    """The time module as the survey sees it: time() and monotonic() move only when the test moves them."""
 
     def __init__(self, now: float) -> None:
         self.now = now
 
     def time(self) -> float:
+        return self.now
+
+    def monotonic(self) -> float:
         return self.now
 
     def __getattr__(self, name):
@@ -68,7 +71,7 @@ def clock(monkeypatch) -> Clock:
 async def start(hass, padspan, clock, **kw) -> ws.WifiSurvey:
     padspan.allowed = True
     hass.data["padspan_ha"].update({
-        "snapshot_cache": (time.monotonic(), {"objects": {"list": [{"key": "phone1", "user_label": "Phone one",
+        "snapshot_cache": (clock.monotonic(), {"objects": {"list": [{"key": "phone1", "user_label": "Phone one",
                                                                      "age_s": 1.0}]}}),
         "model": Model()})
     s = ws.WifiSurvey(hass, Coordinator(clock), **kw)
@@ -207,13 +210,17 @@ async def test_heatmap_worked_out_once_per_poll(hass, padspan, clock, monkeypatc
     assert "status" in await ask(hass, "wifi_heatmap")       # the guest's copy left the kept answer whole
     await ask(hass, "wifi_heatmap", band="2.4")
     assert len(built) == 2                                    # another filter: its own answer
+    await ask(hass, "wifi_heatmap", ap=AP)
+    await ask(hass, "wifi_heatmap", ap=AP.upper())
+    assert len(built) == 3                                    # one access point, however it is written
+    assert await ask(hass, "wifi_heatmap", ap="*") is first   # "*" is all of them, as no filter is
 
     await poll(hass, s, clock)                                # a new poll: worked out again
     again = await ask(hass, "wifi_heatmap")
-    assert again is not first and len(built) == 3
+    assert again is not first and len(built) == 4
     await ask(hass, "wifi_ap_set", mac=AP, floor="ground", x=1.0, y=1.0)
     placed = await ask(hass, "wifi_heatmap")                  # a change through the commands: again too
-    assert len(built) == 4 and placed["aps"][0]["placed"] == "you"
+    assert len(built) == 5 and placed["aps"][0]["placed"] == "you"
 
 
 async def test_a_lasting_fault_warns_once(hass, padspan, clock, monkeypatch, caplog):
@@ -240,3 +247,52 @@ async def test_a_lasting_fault_warns_once(hass, padspan, clock, monkeypatch, cap
     broken["on"] = True
     await poll(hass, s, clock)
     assert warnings() == 2 and s.stats["errors"] == 6
+
+
+async def test_raw_log_trouble_never_stops_the_survey(hass, padspan, clock, monkeypatch, caplog):
+    """A folder named like a log, or a file that can't be removed: the start and the day's first poll go on,
+    and the other old files still go."""
+    s = ws.WifiSurvey(hass, Coordinator(clock), raw_log=True)
+    os.makedirs(os.path.join(s.raw_dir, "folder.jsonl"))
+    paths = {n: os.path.join(s.raw_dir, n) for n in ("stuck.jsonl", "old.jsonl")}
+    for p in paths.values():
+        open(p, "w").close()
+        os.utime(p, (clock.now - 8 * DAY, clock.now - 8 * DAY))
+    real_remove = os.remove
+
+    def remove(p):
+        if p == paths["stuck.jsonl"]:
+            raise PermissionError(13, "Permission denied", p)
+        real_remove(p)
+
+    monkeypatch.setattr(ws.os, "remove", remove)
+    padspan.allowed = True
+    hass.data["padspan_ha"].update({"snapshot_cache": (clock.monotonic(), {"objects": {"list": [
+        {"key": "phone1", "user_label": "Phone one", "age_s": 1.0}]}}), "model": Model()})
+    await s.async_start()
+    assert len(s.coordinator.listeners) == 1 and len(hass.bus.once["homeassistant_stop"]) == 1
+    assert not os.path.exists(paths["old.jsonl"]) and os.path.exists(paths["stuck.jsonl"])
+    assert os.path.isdir(os.path.join(s.raw_dir, "folder.jsonl"))
+    assert any("stuck.jsonl" in r.getMessage() for r in caplog.records if r.levelno == logging.WARNING)
+
+    await poll(hass, s, clock)                     # the day's first poll prunes again, and still collects
+    assert s.stats["errors"] == 0 and s.data["fixed"][RECEIVER_WIFI]["vals"]
+
+
+@pytest.mark.parametrize("failing", ["store load", "raw log prune"])
+async def test_a_failed_start_leaves_no_listener(hass, padspan, clock, monkeypatch, failing):
+    s = ws.WifiSurvey(hass, Coordinator(clock))
+
+    async def boom():
+        raise RuntimeError("storage unreadable")
+
+    def boom_sync():
+        raise OSError("disk gone")
+
+    if failing == "store load":
+        monkeypatch.setattr(s.store, "async_load", boom)
+    else:
+        monkeypatch.setattr(s, "_prune_raw", boom_sync)
+    with pytest.raises((RuntimeError, OSError)):
+        await s.async_start()
+    assert s.coordinator.listeners == [] and not hass.bus.once.get("homeassistant_stop")

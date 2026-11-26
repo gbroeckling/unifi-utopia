@@ -262,13 +262,16 @@ async def _async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 async def async_remove_config_entry_device(hass: HomeAssistant, entry: ConfigEntry, device) -> bool:
     """An access point's device can be deleted once the controller no longer reports that access point
-    (one replaced or taken away); one it still reports would come back, so it stays."""
+    (one replaced or taken away); one it still reports would come back, so it stays. Not while the
+    integration isn't loaded or hasn't heard from the controller yet: then nobody can say, and Home Assistant
+    would remove the device and its entities for good (their names, areas and PadSpan placements)."""
     from .access_points import access_points  # noqa: PLC0415
 
     macs = {i[1][3:] for i in device.identifiers if i[0] == DOMAIN and i[1].startswith("ap:")}
     coordinator = (hass.data.get(DOMAIN, {}).get(entry.entry_id) or {}).get("coordinator")
-    current = access_points(coordinator) if coordinator is not None else {}
-    return bool(macs) and not macs & set(current)
+    if coordinator is None or coordinator.data is None:
+        return False
+    return bool(macs) and not macs & set(access_points(coordinator))
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

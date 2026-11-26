@@ -76,7 +76,7 @@ STILL_M = 1.5
 FRESH_POS_S = 45           # PadSpan must have heard the device this recently
 FRESH_WIFI_S = 150         # UniFi must have seen the client this recently
 FIXED_EVERY_S = 290        # fixed devices: one reading about every five minutes
-SAVE_EVERY_S = 15 * 60     # the readings are saved this often (and when it stops)
+SAVE_EVERY_S = 15 * 60     # the readings are saved this often (and when it stops), by the monotonic clock
 RAW_KEEP_DAYS = 7          # raw log files (an option, off by default) kept this many days
 HEATMAP_KEPT = 16          # answers kept until the next poll, one per filter asked for
 BANDS = {"ng": "2.4", "na": "5", "6e": "6"}
@@ -213,11 +213,13 @@ class WifiSurvey:
             for k in self.data:
                 if isinstance(stored.get(k), type(self.data[k])):
                     self.data[k] = stored[k]
-        self._last_save = time.time()
+        self._last_save = time.monotonic()
+        await self.hass.async_add_executor_job(self._prune_raw)
+        # The listeners last, with nothing after them that can fail: a start that fails leaves none behind
+        # (__init__ adds the unload hook only once the start went through).
         self._unsub = self.coordinator.async_add_listener(self._on_update)
         # Home Assistant stops without unloading the integration: saved then too.
         self._unsub_stop = self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, self._on_ha_stop)
-        await self.hass.async_add_executor_job(self._prune_raw)
 
     async def async_stop(self) -> None:
         if self._unsub:
@@ -233,7 +235,7 @@ class WifiSurvey:
         await self._save()
 
     async def _save(self) -> None:
-        self._last_save = time.time()
+        self._last_save = time.monotonic()
         if any(self.data.values()):      # never licensed, never collected: no file of its own
             await self.store.async_save(self.data)
 
@@ -602,7 +604,7 @@ class WifiSurvey:
         used = {str(c.get("ap_mac") or "").lower() for c in wl.values()}
         kept = {m: aps.get(m, n) for m, n in (self.data.get("aps") or {}).items()}
         self.data["aps"] = {**kept, **{m: n for m, n in aps.items() if m in used}}
-        if now - self._last_save >= SAVE_EVERY_S:
+        if time.monotonic() - self._last_save >= SAVE_EVERY_S:
             await self._save()
         if raw and self.raw_log:
             await self.hass.async_add_executor_job(self._write_raw, raw)
@@ -615,13 +617,24 @@ class WifiSurvey:
                 f.write(json.dumps(r, separators=(",", ":")) + "\n")
 
     def _prune_raw(self) -> None:
+        """Removes the raw log files older than RAW_KEEP_DAYS. Never raises (it runs at the start and on a day's
+        first poll, and stops neither): what isn't a file is left alone, and a file that can't be removed is
+        logged and skipped, so the rest still go."""
         if not os.path.isdir(self.raw_dir):
             return
         cut = time.time() - RAW_KEEP_DAYS * 86400
-        for name in os.listdir(self.raw_dir):
+        try:
+            names = os.listdir(self.raw_dir)
+        except OSError:
+            _LOGGER.warning("Wi-Fi survey: could not read %s to remove old raw log files", self.raw_dir, exc_info=True)
+            return
+        for name in names:
             p = os.path.join(self.raw_dir, name)
-            if name.endswith(".jsonl") and os.path.getmtime(p) < cut:
-                os.remove(p)
+            try:
+                if name.endswith(".jsonl") and os.path.isfile(p) and os.path.getmtime(p) < cut:
+                    os.remove(p)
+            except OSError:
+                _LOGGER.warning("Wi-Fi survey: could not remove the old raw log file %s", p, exc_info=True)
 
     def _phone_time(self, now: float, mac: str, label: Any, fl: str, room: str, band: str, ap: str, sig: float) -> None:
         """Time each phone spends in each room, and how much of it on weak Wi-Fi (seconds, per day)."""
@@ -1163,6 +1176,7 @@ class WifiSurvey:
         Worked out once per poll for each filter and kept until the next one (or a change made through the
         commands): it runs in the event loop and takes a while with a month of readings. Not to be changed
         by the caller: it is the same answer for the next request."""
+        ap = (ap or "*").lower()          # "*", None, "AA:..." and "aa:..." ask the same
         key = (floor, band, ap)
         if key not in self._answers:
             if len(self._answers) >= HEATMAP_KEPT:
